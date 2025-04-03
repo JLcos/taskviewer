@@ -1,4 +1,3 @@
-
 import { useState } from "react";
 import { CheckIcon, ClockIcon, MoreVerticalIcon } from "lucide-react";
 import { 
@@ -8,17 +7,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
+import { Task, TaskStatus } from "@/types/TaskTypes";
 
 interface TaskCardProps {
-  task: {
-    id: string;
-    title: string;
-    discipline: string;
-    status: "pendente" | "em-andamento" | "concluída";
-    dueDate: string;
-    description?: string;
-  };
-  onStatusChange: (id: string, status: "pendente" | "em-andamento" | "concluída") => void;
+  task: Task;
+  onStatusChange: (id: string, status: TaskStatus) => void;
   onEdit: (id: string) => void;
   onDelete: (id: string) => void;
 }

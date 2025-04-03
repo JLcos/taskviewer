@@ -6,23 +6,24 @@ import { TaskCard } from "@/components/TaskCard";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 import { ClockIcon, CircleCheckIcon, CircleIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { Task, TaskStatus } from "@/types/TaskTypes";
 
 // Sample data
 const initialDisciplines = ["Matemática", "Português", "Física", "Química", "História"];
 
-const initialTasks = [
+const initialTasks: Task[] = [
   {
     id: "1",
     title: "Revisão",
     description: "Fazer a Revisão de sociologia",
     discipline: "Matemática",
-    status: "pendente" as const,
+    status: "pendente",
     dueDate: "10 de abril"
   }
 ];
 
 const Index = () => {
-  const [tasks, setTasks] = useState(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [disciplines, setDisciplines] = useState(initialDisciplines);
   const { toast } = useToast();
   
@@ -38,12 +39,12 @@ const Index = () => {
 
   // Handle task creation
   const handleCreateTask = (newTask: any) => {
-    const taskToAdd = {
+    const taskToAdd: Task = {
       id: Date.now().toString(),
       title: newTask.title,
       description: newTask.description,
       discipline: newTask.discipline,
-      status: "pendente" as const,
+      status: "pendente",
       dueDate: formatDate(newTask.dueDate),
     };
     
@@ -51,7 +52,7 @@ const Index = () => {
   };
   
   // Handle task status change
-  const handleStatusChange = (id: string, newStatus: "pendente" | "em-andamento" | "concluída") => {
+  const handleStatusChange = (id: string, newStatus: TaskStatus) => {
     setTasks(tasks.map(task => 
       task.id === id ? { ...task, status: newStatus } : task
     ));
