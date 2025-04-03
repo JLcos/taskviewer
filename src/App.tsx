@@ -25,6 +25,21 @@ const App = () => {
     }
   };
 
+  const handleEditDiscipline = (oldName: string, newName: string) => {
+    setGlobalDisciplines(globalDisciplines.map(d => d === oldName ? newName : d));
+  };
+
+  const handleDeleteDiscipline = (name: string) => {
+    setGlobalDisciplines(globalDisciplines.filter(d => d !== name));
+  };
+
+  const disciplineProps = {
+    disciplines: globalDisciplines,
+    onAddDiscipline: handleAddDiscipline,
+    onEditDiscipline: handleEditDiscipline,
+    onDeleteDiscipline: handleDeleteDiscipline
+  };
+
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -32,11 +47,11 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index disciplines={globalDisciplines} onAddDiscipline={handleAddDiscipline} />} />
-            <Route path="/calendario" element={<Calendar disciplines={globalDisciplines} onAddDiscipline={handleAddDiscipline} />} />
-            <Route path="/arquivos" element={<Files disciplines={globalDisciplines} onAddDiscipline={handleAddDiscipline} />} />
-            <Route path="/analiticos" element={<Analytics disciplines={globalDisciplines} onAddDiscipline={handleAddDiscipline} />} />
-            <Route path="*" element={<NotFound disciplines={globalDisciplines} onAddDiscipline={handleAddDiscipline} />} />
+            <Route path="/" element={<Index {...disciplineProps} />} />
+            <Route path="/calendario" element={<Calendar {...disciplineProps} />} />
+            <Route path="/arquivos" element={<Files {...disciplineProps} />} />
+            <Route path="/analiticos" element={<Analytics {...disciplineProps} />} />
+            <Route path="*" element={<NotFound {...disciplineProps} />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

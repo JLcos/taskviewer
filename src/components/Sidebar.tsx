@@ -1,9 +1,10 @@
 
-import { CalendarIcon, FolderIcon, LayoutDashboardIcon, BarChartIcon, ChevronLeftIcon, ChevronRightIcon, BookIcon, PlusIcon } from "lucide-react";
+import { CalendarIcon, FolderIcon, LayoutDashboardIcon, BarChartIcon, ChevronLeftIcon, ChevronRightIcon, PlusIcon } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
 import { AddDisciplineDialog } from "@/components/AddDisciplineDialog";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface SidebarProps {
   disciplines: string[];
@@ -21,17 +22,52 @@ export function Sidebar({ disciplines, onAddDiscipline }: SidebarProps) {
     { path: "/analiticos", label: "Analíticos", icon: <BarChartIcon size={20} /> },
   ];
 
-  return (
-    <aside className={`bg-sidebar h-screen flex-shrink-0 transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'} p-4 flex flex-col`}>
-      <div className="flex items-center mb-8">
-        {isOpen ? (
-          <h1 className="text-sidebar-foreground text-xl font-bold">Task Viewer</h1>
-        ) : (
-          <h1 className="text-sidebar-foreground text-xl font-bold">TV</h1>
-        )}
-      </div>
+  const sidebarVariants = {
+    open: { width: "16rem" },
+    closed: { width: "5rem" }
+  };
 
-      <nav className="flex flex-col space-y-2">
+  const textVariants = {
+    open: { opacity: 1, x: 0 },
+    closed: { opacity: 0, x: -10 }
+  };
+
+  return (
+    <motion.aside 
+      className="bg-sidebar h-screen flex-shrink-0 transition-all duration-300 p-4 flex flex-col"
+      animate={isOpen ? "open" : "closed"}
+      variants={sidebarVariants}
+      transition={{ duration: 0.3, type: "spring", stiffness: 100 }}
+    >
+      <motion.div className="flex items-center mb-8">
+        <AnimatePresence mode="wait">
+          {isOpen ? (
+            <motion.h1 
+              key="full-title" 
+              className="text-sidebar-foreground text-xl font-bold"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              Task Viewer
+            </motion.h1>
+          ) : (
+            <motion.h1 
+              key="short-title" 
+              className="text-sidebar-foreground text-xl font-bold"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.2 }}
+            >
+              TV
+            </motion.h1>
+          )}
+        </AnimatePresence>
+      </motion.div>
+
+      <motion.nav className="flex flex-col space-y-2">
         {navItems.map((item) => (
           <Link
             key={item.path}
@@ -41,35 +77,72 @@ export function Sidebar({ disciplines, onAddDiscipline }: SidebarProps) {
               location.pathname === item.path && "clay-nav-item-active"
             )}
           >
-            {item.icon}
-            {isOpen && <span>{item.label}</span>}
+            <motion.div
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              className="flex items-center"
+            >
+              {item.icon}
+              <AnimatePresence mode="wait">
+                {isOpen && (
+                  <motion.span
+                    variants={textVariants}
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
+                  >
+                    {item.label}
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.div>
           </Link>
         ))}
-      </nav>
+      </motion.nav>
 
       <div className="mt-8">
-        <h2 className={cn("text-sidebar-foreground text-sm font-semibold mb-3", !isOpen && "text-center")}>
+        <motion.h2 
+          variants={textVariants}
+          className={cn("text-sidebar-foreground text-sm font-semibold mb-3", !isOpen && "text-center")}
+        >
           {isOpen ? "Disciplinas" : ""}
-        </h2>
+        </motion.h2>
         <AddDisciplineDialog 
           onAddDiscipline={onAddDiscipline}
           trigger={
-            <button className="clay-nav-item w-full justify-center">
+            <motion.button 
+              className="clay-nav-item w-full justify-center"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
               <PlusIcon size={20} />
-              {isOpen && <span>Adicionar Disciplina</span>}
-            </button>
+              <AnimatePresence mode="wait">
+                {isOpen && (
+                  <motion.span
+                    variants={textVariants}
+                    initial="closed"
+                    animate="open"
+                    exit="closed"
+                  >
+                    Adicionar Disciplina
+                  </motion.span>
+                )}
+              </AnimatePresence>
+            </motion.button>
           }
         />
       </div>
 
       <div className="mt-auto">
-        <button
+        <motion.button
           onClick={() => setIsOpen(!isOpen)}
           className="clay-nav-item w-full justify-center"
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
           {isOpen ? <ChevronLeftIcon size={20} /> : <ChevronRightIcon size={20} />}
-        </button>
+        </motion.button>
       </div>
-    </aside>
+    </motion.aside>
   );
 }
