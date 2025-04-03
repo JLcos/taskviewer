@@ -1,8 +1,10 @@
 
 import { Sidebar } from "@/components/Sidebar";
 import { ReactNode } from "react";
-import { BellIcon, UserIcon, SettingsIcon } from "lucide-react";
+import { BellIcon, UserIcon, SettingsIcon, SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 interface LayoutProps {
   children: ReactNode;
@@ -14,38 +16,26 @@ export function Layout({ children }: LayoutProps) {
       <Sidebar />
       
       <div className="flex-1 flex flex-col overflow-hidden">
-        <header className="h-16 border-b flex items-center justify-between px-6">
+        <header className="h-16 border-b flex items-center justify-between px-6 shadow-sm">
           <div className="flex-1 max-w-xl">
             <Input
               placeholder="Pesquisar tarefas, arquivos ou anotações..."
               className="clay-input"
-              prefixIcon={
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                  className="w-5 h-5 text-muted-foreground"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z"
-                    clipRule="evenodd"
-                  />
-                </svg>
-              }
+              prefixIcon={<SearchIcon className="w-5 h-5 text-muted-foreground" />}
             />
           </div>
           
           <div className="flex items-center gap-4">
-            <button className="clay-button bg-white p-2">
+            <Button className="clay-button bg-white p-2 relative" variant="ghost" size="icon">
               <BellIcon size={20} />
-            </button>
-            <button className="clay-button bg-white p-2">
+              <span className="absolute top-0 right-0 h-2 w-2 bg-red-500 rounded-full"></span>
+            </Button>
+            <Button className="clay-button bg-white p-2" variant="ghost" size="icon">
               <SettingsIcon size={20} />
-            </button>
-            <button className="clay-button bg-white p-2">
-              <UserIcon size={20} />
-            </button>
+            </Button>
+            <Avatar className="h-9 w-9 border-2 border-primary">
+              <AvatarFallback className="bg-clay-blue text-blue-700">TV</AvatarFallback>
+            </Avatar>
           </div>
         </header>
         

@@ -1,5 +1,5 @@
 
-import { CalendarIcon, FolderIcon, LayoutDashboardIcon, BarChartIcon, BookIcon, PlusIcon } from "lucide-react";
+import { CalendarIcon, FolderIcon, LayoutDashboardIcon, BarChartIcon, ChevronLeftIcon, ChevronRightIcon, BookIcon, PlusIcon } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -19,9 +19,9 @@ export function Sidebar() {
     <aside className={`bg-sidebar h-screen flex-shrink-0 transition-all duration-300 ${isOpen ? 'w-64' : 'w-20'} p-4 flex flex-col`}>
       <div className="flex items-center mb-8">
         {isOpen ? (
-          <h1 className="text-sidebar-foreground text-xl font-bold">Central de Fluxo Acadêmico</h1>
+          <h1 className="text-sidebar-foreground text-xl font-bold">Task Viewer</h1>
         ) : (
-          <h1 className="text-sidebar-foreground text-xl font-bold">CFA</h1>
+          <h1 className="text-sidebar-foreground text-xl font-bold">TV</h1>
         )}
       </div>
 
@@ -56,11 +56,7 @@ export function Sidebar() {
           onClick={() => setIsOpen(!isOpen)}
           className="clay-nav-item w-full justify-center"
         >
-          {isOpen ? (
-            <><span>Recolher</span></>
-          ) : (
-            <><span>Expandir</span></>
-          )}
+          {isOpen ? <ChevronLeftIcon size={20} /> : <ChevronRightIcon size={20} />}
         </button>
       </div>
     </aside>
