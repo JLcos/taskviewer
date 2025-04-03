@@ -1,10 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Layout } from "@/components/Layout";
 import { StatusCard } from "@/components/StatusCard";
 import { TaskCard } from "@/components/TaskCard";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
-import { ClockIcon, CircleCheckIcon, CircleIcon } from "lucide-react";
+import { AddDisciplineDialog } from "@/components/AddDisciplineDialog";
+import { ClockIcon, CircleCheckIcon, CircleIcon, PlusIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Task, TaskStatus } from "@/types/TaskTypes";
 
@@ -25,7 +26,15 @@ const initialTasks: Task[] = [
 const Index = () => {
   const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [disciplines, setDisciplines] = useState(initialDisciplines);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  
+  // Filter tasks by search term
+  const filteredTasks = tasks.filter(task => 
+    task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    task.discipline.toLowerCase().includes(searchTerm.toLowerCase())
+  );
   
   // Calculate task statistics
   const totalTasks = tasks.length;
@@ -64,11 +73,14 @@ const Index = () => {
   };
   
   // Handle task edit
-  const handleEditTask = (id: string) => {
-    // This would be implemented with a dialog similar to CreateTaskDialog
+  const handleEditTask = (id: string, updatedTask: Partial<Task>) => {
+    setTasks(tasks.map(task => 
+      task.id === id ? { ...task, ...updatedTask } : task
+    ));
+    
     toast({
-      title: "Editar tarefa",
-      description: "Funcionalidade de edição será implementada em breve!"
+      title: "Tarefa atualizada",
+      description: "A tarefa foi atualizada com sucesso!"
     });
   };
   
@@ -80,6 +92,13 @@ const Index = () => {
       title: "Tarefa excluída",
       description: "A tarefa foi excluída com sucesso!"
     });
+  };
+  
+  // Handle discipline addition
+  const handleAddDiscipline = (name: string) => {
+    if (!disciplines.includes(name)) {
+      setDisciplines([...disciplines, name]);
+    }
   };
   
   // Format date from YYYY-MM-DD to "DD de Month"
@@ -95,7 +114,11 @@ const Index = () => {
   };
 
   return (
-    <Layout>
+    <Layout 
+      disciplines={disciplines} 
+      onAddDiscipline={handleAddDiscipline}
+      onSearch={setSearchTerm}
+    >
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Painel</h1>
         <CreateTaskDialog 
@@ -130,14 +153,15 @@ const Index = () => {
       
       <h2 className="text-2xl font-bold mb-4">Suas Tarefas</h2>
       <div className="space-y-4">
-        {tasks.length > 0 ? (
-          tasks.map(task => (
+        {filteredTasks.length > 0 ? (
+          filteredTasks.map(task => (
             <TaskCard
               key={task.id}
               task={task}
               onStatusChange={handleStatusChange}
               onEdit={handleEditTask}
               onDelete={handleDeleteTask}
+              disciplines={disciplines}
             />
           ))
         ) : (
@@ -145,12 +169,14 @@ const Index = () => {
             <div className="text-6xl mb-4">📝</div>
             <h3 className="text-xl font-medium mb-2">Sem tarefas no momento</h3>
             <p className="text-muted-foreground text-center mb-6">
-              Parece que você não tem nenhuma tarefa ainda. Que tal criar uma nova?
+              {searchTerm ? "Nenhuma tarefa corresponde à sua pesquisa." : "Parece que você não tem nenhuma tarefa ainda. Que tal criar uma nova?"}
             </p>
-            <CreateTaskDialog 
-              disciplines={disciplines}
-              onCreateTask={handleCreateTask}
-            />
+            {!searchTerm && (
+              <CreateTaskDialog 
+                disciplines={disciplines}
+                onCreateTask={handleCreateTask}
+              />
+            )}
           </div>
         )}
       </div>
@@ -168,8 +194,15 @@ const Index = () => {
           ))}
           <div 
             className="border-2 border-dashed border-border p-4 rounded-xl flex items-center justify-center cursor-pointer hover:bg-secondary/50 transition-all"
+            onClick={() => document.getElementById('add-discipline-trigger')?.click()}
           >
             <span className="text-muted-foreground font-medium">+ Adicionar</span>
+          </div>
+          <div className="hidden">
+            <AddDisciplineDialog 
+              onAddDiscipline={handleAddDiscipline}
+              trigger={<button id="add-discipline-trigger">Add</button>}
+            />
           </div>
         </div>
       </div>

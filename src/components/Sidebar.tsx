@@ -3,8 +3,14 @@ import { CalendarIcon, FolderIcon, LayoutDashboardIcon, BarChartIcon, ChevronLef
 import { Link, useLocation } from "react-router-dom";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { AddDisciplineDialog } from "@/components/AddDisciplineDialog";
 
-export function Sidebar() {
+interface SidebarProps {
+  disciplines: string[];
+  onAddDiscipline: (name: string) => void;
+}
+
+export function Sidebar({ disciplines, onAddDiscipline }: SidebarProps) {
   const location = useLocation();
   const [isOpen, setIsOpen] = useState(true);
   
@@ -45,10 +51,15 @@ export function Sidebar() {
         <h2 className={cn("text-sidebar-foreground text-sm font-semibold mb-3", !isOpen && "text-center")}>
           {isOpen ? "Disciplinas" : ""}
         </h2>
-        <button className="clay-nav-item w-full justify-center">
-          <PlusIcon size={20} />
-          {isOpen && <span>Adicionar Disciplina</span>}
-        </button>
+        <AddDisciplineDialog 
+          onAddDiscipline={onAddDiscipline}
+          trigger={
+            <button className="clay-nav-item w-full justify-center">
+              <PlusIcon size={20} />
+              {isOpen && <span>Adicionar Disciplina</span>}
+            </button>
+          }
+        />
       </div>
 
       <div className="mt-auto">

@@ -5,24 +5,46 @@ import { BellIcon, UserIcon, SettingsIcon, SearchIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { SearchBar } from "@/components/SearchBar";
+import { useState } from "react";
 
 interface LayoutProps {
   children: ReactNode;
+  disciplines: string[];
+  onAddDiscipline: (name: string) => void;
+  onSearch?: (term: string) => void;
+  searchPlaceholder?: string;
 }
 
-export function Layout({ children }: LayoutProps) {
+export function Layout({ 
+  children, 
+  disciplines, 
+  onAddDiscipline, 
+  onSearch,
+  searchPlaceholder = "Pesquisar tarefas, arquivos ou anotações..." 
+}: LayoutProps) {
+  const handleSearch = (term: string) => {
+    if (onSearch) {
+      onSearch(term);
+    }
+  };
+
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      <Sidebar />
+      <Sidebar disciplines={disciplines} onAddDiscipline={onAddDiscipline} />
       
       <div className="flex-1 flex flex-col overflow-hidden">
         <header className="h-16 border-b flex items-center justify-between px-6 shadow-sm">
           <div className="flex-1 max-w-xl">
-            <Input
-              placeholder="Pesquisar tarefas, arquivos ou anotações..."
-              className="clay-input"
-              prefixIcon={<SearchIcon className="w-5 h-5 text-muted-foreground" />}
-            />
+            {onSearch ? (
+              <SearchBar
+                onSearch={handleSearch}
+                placeholder={searchPlaceholder}
+                className="clay-input"
+              />
+            ) : (
+              <div className="h-10"></div> 
+            )}
           </div>
           
           <div className="flex items-center gap-4">

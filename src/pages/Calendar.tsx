@@ -22,7 +22,21 @@ const Calendar = () => {
   const [disciplines, setDisciplines] = useState([
     "Matemática", "Português", "Física", "Química", "História"
   ]);
+  const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  
+  // Filter tasks by date and search term
+  const filteredTasks = tasks.filter(task => {
+    const matchesSearch = 
+      task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      task.discipline.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    // In a real app, we would also filter by the selected date
+    // For now, we're just using the search term
+    
+    return matchesSearch;
+  });
   
   // Handle task creation
   const handleCreateTask = (newTask: any) => {
@@ -51,10 +65,14 @@ const Calendar = () => {
   };
   
   // Handle task edit
-  const handleEditTask = (id: string) => {
+  const handleEditTask = (id: string, updatedTask: Partial<Task>) => {
+    setTasks(tasks.map(task => 
+      task.id === id ? { ...task, ...updatedTask } : task
+    ));
+    
     toast({
-      title: "Editar tarefa",
-      description: "Funcionalidade de edição será implementada em breve!"
+      title: "Tarefa atualizada",
+      description: "A tarefa foi atualizada com sucesso!"
     });
   };
   
@@ -66,6 +84,13 @@ const Calendar = () => {
       title: "Tarefa excluída",
       description: "A tarefa foi excluída com sucesso!"
     });
+  };
+  
+  // Handle discipline addition
+  const handleAddDiscipline = (name: string) => {
+    if (!disciplines.includes(name)) {
+      setDisciplines([...disciplines, name]);
+    }
   };
   
   // Format date from YYYY-MM-DD to "DD de Month"
@@ -81,7 +106,12 @@ const Calendar = () => {
   };
 
   return (
-    <Layout>
+    <Layout 
+      disciplines={disciplines} 
+      onAddDiscipline={handleAddDiscipline}
+      onSearch={setSearchTerm}
+      searchPlaceholder="Pesquisar tarefas no calendário..."
+    >
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Calendário</h1>
         <CreateTaskDialog 
@@ -112,15 +142,24 @@ const Calendar = () => {
             <h2 className="text-2xl font-bold mb-4">Tarefas para {date?.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}</h2>
             
             <div className="space-y-4 mt-6">
-              {tasks.map(task => (
-                <TaskCard
-                  key={task.id}
-                  task={task}
-                  onStatusChange={handleStatusChange}
-                  onEdit={handleEditTask}
-                  onDelete={handleDeleteTask}
-                />
-              ))}
+              {filteredTasks.length > 0 ? (
+                filteredTasks.map(task => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    onStatusChange={handleStatusChange}
+                    onEdit={handleEditTask}
+                    onDelete={handleDeleteTask}
+                    disciplines={disciplines}
+                  />
+                ))
+              ) : (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground">
+                    {searchTerm ? "Nenhuma tarefa corresponde à sua pesquisa." : "Nenhuma tarefa para este dia."}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
         </div>

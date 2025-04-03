@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { FileIcon, FolderIcon, ImageIcon, PlusIcon, UploadIcon, Trash2Icon, EditIcon } from "lucide-react";
@@ -67,9 +67,11 @@ const Files = () => {
     return matchesSearch && matchesDiscipline;
   });
   
-  // Filter folders by discipline
+  // Filter folders by discipline and search
   const filteredFolders = folders.filter(folder => {
-    return selectedDiscipline === "Todas" || folder.discipline === selectedDiscipline;
+    const matchesSearch = folder.name.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesDiscipline = selectedDiscipline === "Todas" || folder.discipline === selectedDiscipline;
+    return matchesSearch && matchesDiscipline;
   });
 
   // Handle file upload (simulated)
@@ -180,6 +182,13 @@ const Files = () => {
     });
   };
 
+  // Handle adding discipline
+  const handleAddDiscipline = (name: string) => {
+    if (!disciplines.includes(name)) {
+      setDisciplines([...disciplines, name]);
+    }
+  };
+
   // File type icons
   const getFileIcon = (type: string) => {
     switch (type) {
@@ -193,7 +202,12 @@ const Files = () => {
   };
 
   return (
-    <Layout>
+    <Layout 
+      disciplines={disciplines} 
+      onAddDiscipline={handleAddDiscipline}
+      onSearch={setSearchTerm}
+      searchPlaceholder="Pesquisar arquivos e pastas..."
+    >
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Arquivos</h1>
         <div className="flex gap-2">
@@ -346,15 +360,6 @@ const Files = () => {
         
         <div className="lg:col-span-3">
           <div className="clay-card">
-            <div className="flex mb-6">
-              <Input
-                placeholder="Pesquisar arquivos..."
-                className="clay-input"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-            
             <Tabs defaultValue="all">
               <TabsList className="bg-secondary mb-4">
                 <TabsTrigger value="all">Todos</TabsTrigger>
@@ -391,14 +396,20 @@ const Files = () => {
                           <DropdownMenuContent align="end" className="bg-white rounded-lg shadow-clay">
                             <DropdownMenuItem 
                               className="cursor-pointer flex items-center" 
-                              onClick={() => openEditFolder(folder)}
+                              onClick={(e) => {
+                                e.stopPropagation(); 
+                                openEditFolder(folder);
+                              }}
                             >
                               <EditIcon className="mr-2 h-4 w-4" />
                               <span>Editar</span>
                             </DropdownMenuItem>
                             <DropdownMenuItem 
                               className="cursor-pointer flex items-center text-red-600" 
-                              onClick={() => handleDeleteFolder(folder.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteFolder(folder.id);
+                              }}
                             >
                               <Trash2Icon className="mr-2 h-4 w-4" />
                               <span>Excluir</span>

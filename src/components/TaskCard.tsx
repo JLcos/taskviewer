@@ -1,3 +1,4 @@
+
 import { useState } from "react";
 import { CheckIcon, ClockIcon, MoreVerticalIcon } from "lucide-react";
 import { 
@@ -8,15 +9,17 @@ import {
   DropdownMenuTrigger 
 } from "@/components/ui/dropdown-menu";
 import { Task, TaskStatus } from "@/types/TaskTypes";
+import { EditTaskDialog } from "@/components/EditTaskDialog";
 
 interface TaskCardProps {
   task: Task;
   onStatusChange: (id: string, status: TaskStatus) => void;
-  onEdit: (id: string) => void;
+  onEdit: (id: string, updatedTask: Partial<Task>) => void;
   onDelete: (id: string) => void;
+  disciplines: string[];
 }
 
-export function TaskCard({ task, onStatusChange, onEdit, onDelete }: TaskCardProps) {
+export function TaskCard({ task, onStatusChange, onEdit, onDelete, disciplines }: TaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
   
   const statusColors = {
@@ -74,11 +77,8 @@ export function TaskCard({ task, onStatusChange, onEdit, onDelete }: TaskCardPro
               Marcar como Concluída
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem 
-              className="rounded-lg hover:bg-clay-blue cursor-pointer"
-              onClick={() => onEdit(task.id)}
-            >
-              Editar Tarefa
+            <DropdownMenuItem className="rounded-lg hover:bg-clay-blue cursor-pointer p-0">
+              <EditTaskDialog task={task} disciplines={disciplines} onUpdateTask={onEdit} />
             </DropdownMenuItem>
             <DropdownMenuItem 
               className="rounded-lg hover:bg-clay-red cursor-pointer text-red-600"
