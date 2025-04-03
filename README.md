@@ -1,4 +1,5 @@
-# Welcome to your Lovable project
+
+# TaskViewer - Organização de Atividades Acadêmicas
 
 ## Project info
 
