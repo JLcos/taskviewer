@@ -10,7 +10,12 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { useState } from "react";
 
-const Analytics = () => {
+interface AnalyticsProps {
+  disciplines: string[];
+  onAddDiscipline: (name: string) => void;
+}
+
+const Analytics = ({ disciplines, onAddDiscipline }: AnalyticsProps) => {
   // Dados zerados conforme solicitado
   const [daysData] = useState([
     { name: 'Seg', tarefas: 0 },
@@ -31,7 +36,7 @@ const Analytics = () => {
   const COLORS = ['#FFCC80', '#FFB74D', '#66BB6A'];
 
   return (
-    <Layout>
+    <Layout disciplines={disciplines} onAddDiscipline={onAddDiscipline}>
       <div className="flex items-center justify-between mb-8">
         <h1 className="text-3xl font-bold">Analíticos</h1>
       </div>

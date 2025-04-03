@@ -32,11 +32,11 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/calendario" element={<Calendar />} />
-            <Route path="/arquivos" element={<Files />} />
-            <Route path="/analiticos" element={<Analytics />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="/" element={<Index disciplines={globalDisciplines} onAddDiscipline={handleAddDiscipline} />} />
+            <Route path="/calendario" element={<Calendar disciplines={globalDisciplines} onAddDiscipline={handleAddDiscipline} />} />
+            <Route path="/arquivos" element={<Files disciplines={globalDisciplines} onAddDiscipline={handleAddDiscipline} />} />
+            <Route path="/analiticos" element={<Analytics disciplines={globalDisciplines} onAddDiscipline={handleAddDiscipline} />} />
+            <Route path="*" element={<NotFound disciplines={globalDisciplines} onAddDiscipline={handleAddDiscipline} />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>

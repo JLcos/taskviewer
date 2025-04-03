@@ -3,9 +3,14 @@ import { Layout } from "@/components/Layout";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 
-const NotFound = () => {
+interface NotFoundProps {
+  disciplines: string[];
+  onAddDiscipline: (name: string) => void;
+}
+
+const NotFound = ({ disciplines, onAddDiscipline }: NotFoundProps) => {
   return (
-    <Layout>
+    <Layout disciplines={disciplines} onAddDiscipline={onAddDiscipline}>
       <div className="flex flex-col items-center justify-center h-full">
         <div className="text-8xl font-bold text-muted-foreground/20 mb-4">404</div>
         <h1 className="text-2xl font-bold mb-4">Página não encontrada</h1>
