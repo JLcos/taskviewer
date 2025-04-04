@@ -7,6 +7,7 @@ import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Task, TaskStatus } from "@/types/TaskTypes";
 import { motion } from "framer-motion";
+import { CalendarIcon } from "lucide-react";
 
 const Calendar = ({ 
   disciplines,
@@ -152,8 +153,9 @@ const Calendar = ({
       searchPlaceholder="Pesquisar tarefas no calendário..."
     >
       <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent">
+        <h1 className="text-3xl font-bold text-primary">
           Calendário
+          <CalendarIcon className="inline-block ml-2 mb-1" size={24} />
         </h1>
         <CreateTaskDialog 
           disciplines={disciplines}
@@ -161,14 +163,20 @@ const Calendar = ({
         />
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        <div className="lg:col-span-1">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-4">
           <motion.div 
-            className="clay-card"
+            className="clay-card rounded-xl shadow-lg overflow-hidden"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
+            <div className="p-4 bg-primary/10 border-b">
+              <h3 className="text-lg font-semibold text-primary">Data Selecionada</h3>
+              <p className="text-sm text-muted-foreground">
+                {date?.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
+              </p>
+            </div>
             <CalendarComponent
               mode="single"
               selected={date}
@@ -176,39 +184,41 @@ const Calendar = ({
               className="bg-white rounded-xl p-3 pointer-events-auto"
               classNames={{
                 day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
-                day_today: "bg-accent text-accent-foreground font-bold",
+                day_today: "border border-primary text-primary font-bold",
                 day: "hover:bg-muted transition-colors"
               }}
             />
           </motion.div>
           
           <motion.div 
-            className="clay-card mt-4 bg-gradient-to-r from-accent/30 to-primary/30"
+            className="clay-card mt-6 bg-gradient-to-r from-accent/20 to-primary/20 rounded-xl shadow-lg"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <h3 className="text-lg font-semibold mb-2">Resumo do Dia</h3>
-            <div className="space-y-2">
-              <div className="flex justify-between">
-                <span>Total de tarefas:</span>
-                <span className="font-bold">{filteredTasks.length}</span>
+            <div className="p-4 border-b bg-white/50">
+              <h3 className="text-lg font-semibold text-primary">Resumo do Dia</h3>
+            </div>
+            <div className="p-4 space-y-3">
+              <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
+                <span className="font-medium">Total de tarefas:</span>
+                <span className="font-bold text-lg bg-primary/20 px-3 py-1 rounded-full">{filteredTasks.length}</span>
               </div>
-              <div className="flex justify-between">
-                <span>Pendentes:</span>
-                <span className="font-bold text-yellow-600">
+              <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
+                <span className="font-medium">Pendentes:</span>
+                <span className="font-bold text-lg bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">
                   {filteredTasks.filter(t => t.status === "pendente").length}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span>Em andamento:</span>
-                <span className="font-bold text-orange-600">
+              <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
+                <span className="font-medium">Em andamento:</span>
+                <span className="font-bold text-lg bg-orange-100 text-orange-700 px-3 py-1 rounded-full">
                   {filteredTasks.filter(t => t.status === "em-andamento").length}
                 </span>
               </div>
-              <div className="flex justify-between">
-                <span>Concluídas:</span>
-                <span className="font-bold text-green-600">
+              <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
+                <span className="font-medium">Concluídas:</span>
+                <span className="font-bold text-lg bg-green-100 text-green-700 px-3 py-1 rounded-full">
                   {filteredTasks.filter(t => t.status === "concluída").length}
                 </span>
               </div>
@@ -216,25 +226,26 @@ const Calendar = ({
           </motion.div>
         </div>
         
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-8">
           <motion.div 
-            className="clay-card h-full bg-gradient-to-br from-white to-gray-50"
+            className="clay-card h-full bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <h2 className="text-2xl font-bold mb-4 bg-gradient-to-r from-primary to-accent-foreground bg-clip-text text-transparent">
-              Tarefas para {date?.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}
-            </h2>
+            <div className="p-4 border-b bg-primary/5">
+              <h2 className="text-xl font-bold text-primary">
+                Tarefas para {date?.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}
+              </h2>
+            </div>
             
-            <div className="space-y-4 mt-6">
+            <div className="p-4 space-y-4 max-h-[calc(100vh-20rem)] overflow-y-auto">
               {filteredTasks.length > 0 ? (
                 filteredTasks.map((task, index) => (
                   <motion.div
                     key={task.id}
-                    variants={cardVariants}
-                    initial="hidden"
-                    animate="visible"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                   >
                     <TaskCard
@@ -248,15 +259,15 @@ const Calendar = ({
                 ))
               ) : (
                 <motion.div 
-                  className="text-center py-16"
+                  className="text-center py-16 bg-white/50 rounded-xl"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.3 }}
                 >
-                  <p className="text-muted-foreground text-lg">
+                  <p className="text-muted-foreground text-lg mb-2">
                     {searchTerm ? "Nenhuma tarefa corresponde à sua pesquisa." : "Nenhuma tarefa para este dia."}
                   </p>
-                  <p className="text-muted-foreground mt-2">
+                  <p className="text-muted-foreground">
                     Use o botão "Nova Tarefa" para adicionar uma atividade.
                   </p>
                 </motion.div>
