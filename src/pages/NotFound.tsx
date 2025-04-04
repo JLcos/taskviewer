@@ -48,8 +48,10 @@ const NotFound = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDisc
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.5 }}
+          whileHover={{ scale: 1.05 }}
+          whileTap={{ scale: 0.95 }}
         >
-          <Button asChild className="clay-button bg-primary text-primary-foreground" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <Button asChild className="clay-button bg-primary text-primary-foreground">
             <Link to="/">Voltar ao início</Link>
           </Button>
         </motion.div>

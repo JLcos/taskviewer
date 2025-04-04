@@ -49,7 +49,7 @@ const App = () => {
           <Routes>
             <Route path="/" element={<Index {...disciplineProps} />} />
             <Route path="/calendario" element={<Calendar {...disciplineProps} />} />
-            <Route path="/arquivos" element={<Files {...disciplineProps} />} />
+            <Route path="/arquivos" element={<Files />} />
             <Route path="/analiticos" element={<Analytics {...disciplineProps} />} />
             <Route path="*" element={<NotFound {...disciplineProps} />} />
           </Routes>
