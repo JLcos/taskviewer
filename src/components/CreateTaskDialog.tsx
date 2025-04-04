@@ -1,5 +1,6 @@
+
 import { useState } from "react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { PlusIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -40,16 +41,12 @@ export function CreateTaskDialog({ disciplines, onCreateTask }: CreateTaskDialog
       dueDate
     });
     
+    // Clear the form
     setTitle("");
     setDescription("");
     setDiscipline("");
     setDueDate("");
     setOpen(false);
-    
-    toast({
-      title: "Tarefa criada",
-      description: "Sua tarefa foi criada com sucesso!"
-    });
   };
 
   return (
@@ -63,6 +60,9 @@ export function CreateTaskDialog({ disciplines, onCreateTask }: CreateTaskDialog
       <DialogContent className="bg-white rounded-2xl shadow-clay p-6 border-none max-w-md">
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">Nova Tarefa</DialogTitle>
+          <DialogDescription>
+            Preencha os campos abaixo para criar uma nova tarefa
+          </DialogDescription>
         </DialogHeader>
         
         <form onSubmit={handleSubmit} className="space-y-4 mt-4">

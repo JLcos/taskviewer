@@ -55,7 +55,7 @@ const Calendar = ({
       task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.discipline.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filter by selected date 
+    // Filter by selected date
     const selectedDateFormatted = formatSelectedDate(date);
     const matchesDate = selectedDateFormatted === "" || task.dueDate === selectedDateFormatted;
     
@@ -115,12 +115,11 @@ const Calendar = ({
     });
   };
   
-  // Format date from YYYY-MM-DD to "DD de Month"
+  // Format date from YYYY-MM-DD to "DD de Month" - Fixed date issue
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
-    // Add one day to fix the date issue
-    date.setDate(date.getDate() + 1);
     
+    // No need to add a day anymore - this was causing the date issue
     const day = date.getDate();
     const monthNames = [
       "janeiro", "fevereiro", "março", "abril", "maio", "junho",

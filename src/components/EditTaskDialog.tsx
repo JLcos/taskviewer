@@ -171,9 +171,8 @@ function formatDateForInput(dateString: string): string {
 // Format date from YYYY-MM-DD to "DD de Month" for display
 function formatDateForDisplay(dateString: string): string {
   const date = new Date(dateString);
-  // Add one day to fix the date issue
-  date.setDate(date.getDate() + 1);
   
+  // Removed the date adjustment that was causing the issue
   const day = date.getDate();
   const monthNames = [
     "janeiro", "fevereiro", "março", "abril", "maio", "junho",

@@ -29,8 +29,8 @@ export function Sidebar({ disciplines, onAddDiscipline }: SidebarProps) {
   return (
     <aside 
       className="bg-sidebar h-screen w-64 flex-shrink-0 p-4 flex flex-col relative overflow-hidden shadow-lg"
-      onHoverStart={() => setIsHovering(true)}
-      onHoverEnd={() => setIsHovering(false)}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
     >
       {/* Glass overlay effect */}
       <div className="absolute inset-0 bg-gradient-to-b from-blue-600/20 to-transparent pointer-events-none" />
