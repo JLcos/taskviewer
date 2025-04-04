@@ -24,6 +24,8 @@ export function SearchBar({ onSearch, placeholder = "Pesquisar...", className = 
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setSearchTerm(e.target.value);
+    // Remove this line to fix the search functionality
+    // Relying on the debounced effect instead
   };
 
   return (

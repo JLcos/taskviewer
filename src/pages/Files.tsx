@@ -1,27 +1,25 @@
 
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
-import { motion } from "framer-motion";
-import { FolderIcon, FileIcon, UploadIcon, PlusIcon, Trash2Icon, EditIcon, DownloadIcon } from "lucide-react";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import { useToast } from "@/hooks/use-toast";
-import { 
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+import { File, FolderIcon, PenIcon, TrashIcon, UploadIcon } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+
+// File interface
+interface FileItem {
+  id: string;
+  name: string;
+  type: string;
+  discipline: string;
+  date: string;
+  size: string;
+}
+
+// Storage key for files
+const FILES_STORAGE_KEY = 'task-viewer-files';
 
 interface FilesProps {
   disciplines: string[];
@@ -30,150 +28,85 @@ interface FilesProps {
   onDeleteDiscipline: (name: string) => void;
 }
 
-interface File {
-  id: string;
-  name: string;
-  icon: JSX.Element;
-  date: string;
-  size?: string;
-  type: string;
-}
-
-const Files = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipline }: FilesProps) => {
-  const { toast } = useToast();
+export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipline }: FilesProps) {
+  const [files, setFiles] = useState<FileItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [newFileName, setNewFileName] = useState("");
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [editDialogOpen, setEditDialogOpen] = useState(false);
-  const [editedFileName, setEditedFileName] = useState("");
-  
-  const containerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        when: "beforeChildren",
-        staggerChildren: 0.1
-      }
-    }
-  };
-  
-  const itemVariants = {
-    hidden: { y: 20, opacity: 0 },
-    visible: {
-      y: 0,
-      opacity: 1
-    }
-  };
+  const [newFileType, setNewFileType] = useState("pdf");
+  const [newFileDiscipline, setNewFileDiscipline] = useState(disciplines[0] || "");
+  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingFile, setEditingFile] = useState<FileItem | null>(null);
+  const { toast } = useToast();
 
-  const folders = [
-    { id: '1', name: "Documentos", icon: <FolderIcon className="text-yellow-500" /> },
-    { id: '2', name: "Imagens", icon: <FolderIcon className="text-blue-500" /> },
-    { id: '3', name: "Tarefas", icon: <FolderIcon className="text-green-500" /> },
-    { id: '4', name: "Anotações", icon: <FolderIcon className="text-purple-500" /> },
-  ];
+  // Load files from localStorage on component mount
+  useEffect(() => {
+    const savedFiles = localStorage.getItem(FILES_STORAGE_KEY);
+    if (savedFiles) {
+      setFiles(JSON.parse(savedFiles));
+    }
+  }, []);
 
-  const [files, setFiles] = useState<File[]>([
-    { id: '1', name: "Relatório Final.pdf", icon: <FileIcon className="text-red-500" />, date: "10 de abril, 2025", size: "2.4 MB", type: "pdf" },
-    { id: '2', name: "Apresentação.pptx", icon: <FileIcon className="text-orange-500" />, date: "8 de abril, 2025", size: "4.7 MB", type: "pptx" },
-    { id: '3', name: "Dados Estatísticos.xlsx", icon: <FileIcon className="text-green-500" />, date: "5 de abril, 2025", size: "1.2 MB", type: "xlsx" },
-    { id: '4', name: "Anotações.docx", icon: <FileIcon className="text-blue-500" />, date: "3 de abril, 2025", size: "0.8 MB", type: "docx" },
-  ]);
+  // Save files to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(FILES_STORAGE_KEY, JSON.stringify(files));
+  }, [files]);
+
+  const filteredFiles = files.filter(file => 
+    file.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    file.discipline.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    file.type.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const handleAddFile = () => {
-    if (!newFileName) {
+    if (!newFileName.trim()) {
       toast({
-        title: "Erro",
-        description: "O nome do arquivo não pode estar vazio.",
+        title: "Nome inválido",
+        description: "Por favor, insira um nome para o arquivo",
         variant: "destructive"
       });
       return;
     }
 
-    // Determine file type by extension
-    const extension = newFileName.split('.').pop()?.toLowerCase() || '';
-    let fileIcon;
-    let fileType = extension;
-
-    switch (extension) {
-      case 'pdf':
-        fileIcon = <FileIcon className="text-red-500" />;
-        break;
-      case 'docx':
-      case 'doc':
-        fileIcon = <FileIcon className="text-blue-500" />;
-        break;
-      case 'xlsx':
-      case 'xls':
-        fileIcon = <FileIcon className="text-green-500" />;
-        break;
-      case 'pptx':
-      case 'ppt':
-        fileIcon = <FileIcon className="text-orange-500" />;
-        break;
-      case 'jpg':
-      case 'png':
-      case 'jpeg':
-        fileIcon = <FileIcon className="text-purple-500" />;
-        break;
-      default:
-        fileIcon = <FileIcon className="text-gray-500" />;
-        fileType = 'unknown';
-    }
-
-    const currentDate = new Date();
-    const formattedDate = `${currentDate.getDate()} de ${getMonthName(currentDate.getMonth())}, ${currentDate.getFullYear()}`;
-
-    const newFile: File = {
+    const newFile: FileItem = {
       id: Date.now().toString(),
       name: newFileName,
-      icon: fileIcon,
-      date: formattedDate,
-      size: '0.1 MB', // Placeholder size
-      type: fileType
+      type: newFileType,
+      discipline: newFileDiscipline,
+      date: new Date().toLocaleDateString('pt-BR'),
+      size: Math.floor(Math.random() * 10) + 1 + " MB"
     };
 
-    setFiles([...files, newFile]);
+    setFiles(prevFiles => [...prevFiles, newFile]);
     setNewFileName("");
-    setUploadDialogOpen(false);
+    setNewFileType("pdf");
+    setNewFileDiscipline(disciplines[0] || "");
+    setIsAddDialogOpen(false);
 
     toast({
       title: "Arquivo adicionado",
-      description: `O arquivo ${newFileName} foi adicionado com sucesso!`
+      description: "O arquivo foi adicionado com sucesso!"
     });
   };
 
   const handleEditFile = () => {
-    if (!selectedFile) return;
-    if (!editedFileName) {
-      toast({
-        title: "Erro",
-        description: "O nome do arquivo não pode estar vazio.",
-        variant: "destructive"
-      });
-      return;
-    }
+    if (!editingFile) return;
 
-    const updatedFiles = files.map(file => 
-      file.id === selectedFile.id 
-        ? { ...file, name: editedFileName } 
-        : file
-    );
-
-    setFiles(updatedFiles);
-    setEditDialogOpen(false);
-    setSelectedFile(null);
-    setEditedFileName("");
+    setFiles(prevFiles => prevFiles.map(file => 
+      file.id === editingFile.id ? editingFile : file
+    ));
+    
+    setIsEditDialogOpen(false);
+    setEditingFile(null);
 
     toast({
-      title: "Arquivo editado",
-      description: "O nome do arquivo foi atualizado com sucesso!"
+      title: "Arquivo atualizado",
+      description: "O arquivo foi atualizado com sucesso!"
     });
   };
 
-  const handleDeleteFile = (fileId: string) => {
-    setFiles(files.filter(file => file.id !== fileId));
+  const handleDeleteFile = (id: string) => {
+    setFiles(prevFiles => prevFiles.filter(file => file.id !== id));
     
     toast({
       title: "Arquivo excluído",
@@ -181,227 +114,224 @@ const Files = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
     });
   };
 
-  const handleFileAction = (action: 'edit' | 'delete', file: File) => {
-    if (action === 'edit') {
-      setSelectedFile(file);
-      setEditedFileName(file.name);
-      setEditDialogOpen(true);
-    } else if (action === 'delete') {
-      handleDeleteFile(file.id);
-    }
-  };
-
-  const getMonthName = (monthIndex: number): string => {
-    const months = [
-      "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-      "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
-    ];
-    return months[monthIndex];
-  };
-
-  const filteredFiles = files.filter(file => 
-    file.name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
-
   return (
     <Layout 
-      disciplines={disciplines}
+      disciplines={disciplines} 
       onAddDiscipline={onAddDiscipline}
       onEditDiscipline={onEditDiscipline}
       onDeleteDiscipline={onDeleteDiscipline}
-      onSearch={(term) => setSearchTerm(term)}
-      searchPlaceholder="Pesquisar arquivos..."
+      onSearch={setSearchTerm}
+      searchPlaceholder="Pesquisar por nome, disciplina ou tipo..."
     >
-      <motion.div 
-        className="flex items-center justify-between mb-8"
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <h1 className="text-3xl font-bold text-primary">Arquivos</h1>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-3xl font-bold">Arquivos</h1>
         
-        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
           <DialogTrigger asChild>
-            <motion.div
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <Button className="bg-primary flex items-center gap-2">
-                <UploadIcon size={16} />
-                Adicionar Arquivo
-              </Button>
-            </motion.div>
+            <Button className="clay-button flex items-center gap-2">
+              <UploadIcon size={16} />
+              <span>Adicionar Arquivo</span>
+            </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
+          <DialogContent className="bg-white rounded-2xl shadow-clay border-none">
             <DialogHeader>
               <DialogTitle>Adicionar Novo Arquivo</DialogTitle>
-              <DialogDescription>
-                Digite o nome do arquivo que deseja adicionar.
-              </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="fileName" className="text-right">
-                  Nome
-                </Label>
+            <div className="space-y-4 mt-4">
+              <div className="space-y-2">
+                <label htmlFor="fileName" className="text-sm font-medium">Nome do Arquivo</label>
                 <Input
                   id="fileName"
                   value={newFileName}
                   onChange={(e) => setNewFileName(e.target.value)}
-                  placeholder="exemplo.pdf"
-                  className="col-span-3"
+                  className="clay-input"
+                  placeholder="Digite o nome do arquivo"
+                  required
                 />
               </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="fileType" className="text-sm font-medium">Tipo de Arquivo</label>
+                <select
+                  id="fileType"
+                  value={newFileType}
+                  onChange={(e) => setNewFileType(e.target.value)}
+                  className="clay-input w-full"
+                >
+                  <option value="pdf">PDF</option>
+                  <option value="docx">DOCX</option>
+                  <option value="pptx">PPTX</option>
+                  <option value="xlsx">XLSX</option>
+                  <option value="txt">TXT</option>
+                  <option value="jpg">JPG</option>
+                  <option value="png">PNG</option>
+                </select>
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="fileDiscipline" className="text-sm font-medium">Disciplina</label>
+                <select
+                  id="fileDiscipline"
+                  value={newFileDiscipline}
+                  onChange={(e) => setNewFileDiscipline(e.target.value)}
+                  className="clay-input w-full"
+                >
+                  {disciplines.map(discipline => (
+                    <option key={discipline} value={discipline}>{discipline}</option>
+                  ))}
+                </select>
+              </div>
+              
+              <div className="flex justify-end mt-4">
+                <Button 
+                  onClick={handleAddFile}
+                  className="clay-button"
+                >
+                  Adicionar Arquivo
+                </Button>
+              </div>
             </div>
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                onClick={handleAddFile}
-                className="bg-primary"
-              >
-                Adicionar
-              </Button>
-            </DialogFooter>
           </DialogContent>
         </Dialog>
-
-        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="sm:max-w-[425px]">
+        
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="bg-white rounded-2xl shadow-clay border-none">
             <DialogHeader>
               <DialogTitle>Editar Arquivo</DialogTitle>
-              <DialogDescription>
-                Altere o nome do arquivo.
-              </DialogDescription>
             </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="editFileName" className="text-right">
-                  Nome
-                </Label>
-                <Input
-                  id="editFileName"
-                  value={editedFileName}
-                  onChange={(e) => setEditedFileName(e.target.value)}
-                  className="col-span-3"
-                />
-              </div>
-            </div>
-            <DialogFooter>
-              <Button 
-                type="submit" 
-                onClick={handleEditFile}
-                className="bg-primary"
-              >
-                Salvar
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      </motion.div>
-
-      <motion.div 
-        className="mb-10"
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <h2 className="text-xl font-semibold mb-4 text-primary">Pastas</h2>
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          {folders.map((folder) => (
-            <motion.div
-              key={folder.id}
-              variants={itemVariants}
-              whileHover={{ scale: 1.03, y: -5 }}
-              whileTap={{ scale: 0.98 }}
-              className="clay-card flex flex-col items-center p-6 cursor-pointer hover:shadow-clay-hover transition-all bg-white/80"
-            >
-              <motion.div 
-                className="text-4xl mb-3"
-                whileHover={{ rotate: [0, -5, 5, -5, 0] }}
-                transition={{ duration: 0.5 }}
-              >
-                {folder.icon}
-              </motion.div>
-              <h3 className="text-center font-medium">{folder.name}</h3>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        animate="visible"
-      >
-        <h2 className="text-xl font-semibold mb-4 text-primary">Arquivos</h2>
-        
-        {filteredFiles.length > 0 ? (
-          <div className="clay-card divide-y bg-white/90">
-            {filteredFiles.map((file, index) => (
-              <motion.div
-                key={file.id}
-                variants={itemVariants}
-                whileHover={{ backgroundColor: "rgba(0,0,0,0.02)" }}
-                className="flex items-center gap-3 p-4 cursor-pointer transition-colors relative"
-              >
-                <motion.div whileHover={{ rotate: 15 }} transition={{ duration: 0.2 }}>
-                  {file.icon}
-                </motion.div>
-                <div className="flex-1">
-                  <p className="font-medium">{file.name}</p>
-                  <div className="flex gap-4 text-sm text-muted-foreground">
-                    <span>{file.date}</span>
-                    {file.size && <span>{file.size}</span>}
-                  </div>
+            {editingFile && (
+              <div className="space-y-4 mt-4">
+                <div className="space-y-2">
+                  <label htmlFor="editFileName" className="text-sm font-medium">Nome do Arquivo</label>
+                  <Input
+                    id="editFileName"
+                    value={editingFile.name}
+                    onChange={(e) => setEditingFile({...editingFile, name: e.target.value})}
+                    className="clay-input"
+                    placeholder="Digite o nome do arquivo"
+                    required
+                  />
                 </div>
                 
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <motion.button 
-                      className="text-muted-foreground hover:text-foreground transition-colors"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <FileIcon size={16} />
-                    </motion.button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent className="w-56 bg-white">
-                    <DropdownMenuItem onClick={() => handleFileAction('edit', file)}>
-                      <EditIcon size={16} className="mr-2" /> Renomear
-                    </DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleFileAction('delete', file)}>
-                      <Trash2Icon size={16} className="mr-2" /> Excluir
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>
-                      <DownloadIcon size={16} className="mr-2" /> Download
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </motion.div>
-            ))}
+                <div className="space-y-2">
+                  <label htmlFor="editFileType" className="text-sm font-medium">Tipo de Arquivo</label>
+                  <select
+                    id="editFileType"
+                    value={editingFile.type}
+                    onChange={(e) => setEditingFile({...editingFile, type: e.target.value})}
+                    className="clay-input w-full"
+                  >
+                    <option value="pdf">PDF</option>
+                    <option value="docx">DOCX</option>
+                    <option value="pptx">PPTX</option>
+                    <option value="xlsx">XLSX</option>
+                    <option value="txt">TXT</option>
+                    <option value="jpg">JPG</option>
+                    <option value="png">PNG</option>
+                  </select>
+                </div>
+                
+                <div className="space-y-2">
+                  <label htmlFor="editFileDiscipline" className="text-sm font-medium">Disciplina</label>
+                  <select
+                    id="editFileDiscipline"
+                    value={editingFile.discipline}
+                    onChange={(e) => setEditingFile({...editingFile, discipline: e.target.value})}
+                    className="clay-input w-full"
+                  >
+                    {disciplines.map(discipline => (
+                      <option key={discipline} value={discipline}>{discipline}</option>
+                    ))}
+                  </select>
+                </div>
+                
+                <div className="flex justify-end mt-4">
+                  <Button 
+                    onClick={handleEditFile}
+                    className="clay-button"
+                  >
+                    Salvar Alterações
+                  </Button>
+                </div>
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+      </div>
+      
+      <div className="clay-card overflow-hidden">
+        {filteredFiles.length > 0 ? (
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Nome</TableHead>
+                  <TableHead>Disciplina</TableHead>
+                  <TableHead>Data</TableHead>
+                  <TableHead>Tamanho</TableHead>
+                  <TableHead className="text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredFiles.map((file) => (
+                  <TableRow key={file.id}>
+                    <TableCell className="font-medium flex items-center gap-2">
+                      <div className={`p-2 rounded-lg bg-clay-blue`}>
+                        <File size={16} />
+                      </div>
+                      <span>{file.name}.{file.type}</span>
+                    </TableCell>
+                    <TableCell>{file.discipline}</TableCell>
+                    <TableCell>{file.date}</TableCell>
+                    <TableCell>{file.size}</TableCell>
+                    <TableCell className="text-right">
+                      <div className="flex justify-end gap-2">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditingFile(file);
+                            setIsEditDialogOpen(true);
+                          }}
+                        >
+                          <PenIcon size={16} />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => handleDeleteFile(file.id)}
+                          className="text-red-500 hover:text-red-700"
+                        >
+                          <TrashIcon size={16} />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
         ) : (
-          <motion.div 
-            className="clay-card p-12 text-center"
-            variants={itemVariants}
-          >
-            <p className="text-lg text-muted-foreground mb-4">
-              {searchTerm 
-                ? "Nenhum arquivo corresponde à sua pesquisa" 
-                : "Nenhum arquivo encontrado"}
+          <div className="text-center p-12">
+            <div className="mx-auto w-12 h-12 rounded-full bg-clay-blue flex items-center justify-center mb-4">
+              <FolderIcon className="text-blue-700" />
+            </div>
+            <h3 className="text-lg font-medium mb-2">Sem arquivos</h3>
+            <p className="text-muted-foreground mb-6 max-w-md mx-auto">
+              {searchTerm ? "Nenhum arquivo corresponde à sua pesquisa." : "Você ainda não tem nenhum arquivo. Adicione seu primeiro arquivo."}
             </p>
-            <Button 
-              onClick={() => setUploadDialogOpen(true)}
-              className="bg-primary"
-            >
-              <PlusIcon size={16} className="mr-2" />
-              Adicionar Arquivo
-            </Button>
-          </motion.div>
+            {!searchTerm && (
+              <Button
+                onClick={() => setIsAddDialogOpen(true)}
+                className="clay-button"
+              >
+                <UploadIcon size={16} className="mr-2" />
+                Adicionar Arquivo
+              </Button>
+            )}
+          </div>
         )}
-      </motion.div>
+      </div>
     </Layout>
   );
-};
-
-export default Files;
+}

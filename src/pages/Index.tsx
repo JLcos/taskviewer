@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { StatusCard } from "@/components/StatusCard";
 import { TaskCard } from "@/components/TaskCard";
@@ -22,6 +22,9 @@ const initialTasks: Task[] = [
   }
 ];
 
+// Storage keys
+const TASKS_STORAGE_KEY = 'task-viewer-tasks';
+
 interface IndexProps {
   disciplines: string[];
   onAddDiscipline: (name: string) => void;
@@ -34,6 +37,19 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   
+  // Load tasks from localStorage on component mount
+  useEffect(() => {
+    const savedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
+    if (savedTasks) {
+      setTasks(JSON.parse(savedTasks));
+    }
+  }, []);
+  
+  // Save tasks to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+  }, [tasks]);
+  
   // Filter tasks by search term
   const filteredTasks = tasks.filter(task => 
     task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -41,11 +57,14 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
     task.discipline.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
+  // Get pending tasks for the rectangle display
+  const pendingTasks = tasks.filter(task => task.status === "pendente");
+  
   // Calculate task statistics
   const totalTasks = tasks.length;
   const inProgressTasks = tasks.filter(task => task.status === "em-andamento").length;
   const completedTasks = tasks.filter(task => task.status === "concluída").length;
-  const pendingTasks = tasks.filter(task => task.status === "pendente").length;
+  const pendingTasksCount = tasks.filter(task => task.status === "pendente").length;
   
   const totalDisciplines = [...new Set(tasks.map(task => task.discipline))].length;
   const completedPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
@@ -62,12 +81,17 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
       dueDate: formatDate(newTask.dueDate),
     };
     
-    setTasks([...tasks, taskToAdd]);
+    setTasks(prevTasks => [...prevTasks, taskToAdd]);
+    
+    toast({
+      title: "Tarefa criada",
+      description: "A tarefa foi criada com sucesso!"
+    });
   };
   
   // Handle task status change
   const handleStatusChange = (id: string, newStatus: TaskStatus) => {
-    setTasks(tasks.map(task => 
+    setTasks(prevTasks => prevTasks.map(task => 
       task.id === id ? { ...task, status: newStatus } : task
     ));
     
@@ -79,7 +103,7 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
   
   // Handle task edit
   const handleEditTask = (id: string, updatedTask: Partial<Task>) => {
-    setTasks(tasks.map(task => 
+    setTasks(prevTasks => prevTasks.map(task => 
       task.id === id ? { ...task, ...updatedTask } : task
     ));
     
@@ -91,7 +115,7 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
   
   // Handle task deletion
   const handleDeleteTask = (id: string) => {
-    setTasks(tasks.filter(task => task.id !== id));
+    setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
     
     toast({
       title: "Tarefa excluída",
@@ -184,6 +208,37 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
             subtitle={`${completedPercentage}% concluído`}
           />
         </motion.div>
+      </motion.div>
+      
+      {/* Pending Tasks Rectangle */}
+      <motion.div 
+        className="clay-card mb-8"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-xl font-bold">Tarefas Pendentes ({pendingTasksCount})</h2>
+        </div>
+        
+        <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+          {pendingTasks.length > 0 ? (
+            pendingTasks.map((task) => (
+              <TaskCard
+                key={task.id}
+                task={task}
+                onStatusChange={handleStatusChange}
+                onEdit={handleEditTask}
+                onDelete={handleDeleteTask}
+                disciplines={disciplines}
+              />
+            ))
+          ) : (
+            <div className="text-center p-4 bg-gray-50 rounded-lg">
+              <p className="text-muted-foreground">Não há tarefas pendentes</p>
+            </div>
+          )}
+        </div>
       </motion.div>
       
       <motion.h2 

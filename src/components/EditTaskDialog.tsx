@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Task } from "@/types/TaskTypes";
+import { useToast } from "@/hooks/use-toast";
 
 interface EditTaskDialogProps {
   task: Task;
@@ -18,6 +19,7 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
   const [discipline, setDiscipline] = useState(task.discipline);
   const [dueDate, setDueDate] = useState(formatDateForInput(task.dueDate));
   const [status, setStatus] = useState(task.status);
+  const { toast } = useToast();
 
   // Update local state when task changes
   useEffect(() => {
@@ -37,6 +39,11 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
       discipline,
       status,
       dueDate: formatDateForDisplay(dueDate),
+    });
+    
+    toast({
+      title: "Tarefa atualizada",
+      description: "A tarefa foi atualizada com sucesso!"
     });
     
     setIsOpen(false);

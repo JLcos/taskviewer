@@ -9,15 +9,31 @@ import Calendar from "./pages/Calendar";
 import Files from "./pages/Files";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 const queryClient = new QueryClient();
+
+// Storage key for disciplines
+const DISCIPLINES_STORAGE_KEY = 'task-viewer-disciplines';
 
 const App = () => {
   // Global state for disciplines that can be shared across pages
   const [globalDisciplines, setGlobalDisciplines] = useState([
     "Matemática", "Português", "Física", "Química", "História"
   ]);
+  
+  // Load disciplines from localStorage on app start
+  useEffect(() => {
+    const savedDisciplines = localStorage.getItem(DISCIPLINES_STORAGE_KEY);
+    if (savedDisciplines) {
+      setGlobalDisciplines(JSON.parse(savedDisciplines));
+    }
+  }, []);
+  
+  // Save disciplines to localStorage whenever they change
+  useEffect(() => {
+    localStorage.setItem(DISCIPLINES_STORAGE_KEY, JSON.stringify(globalDisciplines));
+  }, [globalDisciplines]);
   
   const handleAddDiscipline = (name: string) => {
     if (!globalDisciplines.includes(name)) {
