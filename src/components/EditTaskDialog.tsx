@@ -1,7 +1,7 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Task } from "@/types/TaskTypes";
 
@@ -16,8 +16,17 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
   const [title, setTitle] = useState(task.title);
   const [description, setDescription] = useState(task.description);
   const [discipline, setDiscipline] = useState(task.discipline);
-  const [dueDate, setDueDate] = useState(task.dueDate);
+  const [dueDate, setDueDate] = useState(formatDateForInput(task.dueDate));
   const [status, setStatus] = useState(task.status);
+
+  // Update local state when task changes
+  useEffect(() => {
+    setTitle(task.title);
+    setDescription(task.description);
+    setDiscipline(task.discipline);
+    setDueDate(formatDateForInput(task.dueDate));
+    setStatus(task.status);
+  }, [task]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,8 +35,8 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
       title,
       description,
       discipline,
-      dueDate,
-      status
+      status,
+      dueDate: formatDateForDisplay(dueDate),
     });
     
     setIsOpen(false);
@@ -43,6 +52,9 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
       <DialogContent className="bg-white rounded-2xl shadow-clay border-none">
         <DialogHeader>
           <DialogTitle>Editar Tarefa</DialogTitle>
+          <DialogDescription>
+            Preencha os campos abaixo para editar a tarefa
+          </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4 mt-2">
           <div className="space-y-2">
@@ -110,7 +122,7 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
               id="dueDate"
               type="date"
               className="clay-input"
-              value={formatDateForInput(dueDate)}
+              value={dueDate}
               onChange={(e) => setDueDate(e.target.value)}
               required
             />
@@ -137,7 +149,7 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
   );
 }
 
-// Helper function to convert "DD de month" format to YYYY-MM-DD for input
+// Format date from "DD de month" to YYYY-MM-DD for input
 function formatDateForInput(dateString: string): string {
   const months = [
     "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -154,4 +166,19 @@ function formatDateForInput(dateString: string): string {
   
   const year = new Date().getFullYear();
   return `${year}-${(month + 1).toString().padStart(2, '0')}-${day.toString().padStart(2, '0')}`;
+}
+
+// Format date from YYYY-MM-DD to "DD de Month" for display
+function formatDateForDisplay(dateString: string): string {
+  const date = new Date(dateString);
+  // Add one day to fix the date issue
+  date.setDate(date.getDate() + 1);
+  
+  const day = date.getDate();
+  const monthNames = [
+    "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+    "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+  ];
+  const month = monthNames[date.getMonth()];
+  return `${day} de ${month}`;
 }

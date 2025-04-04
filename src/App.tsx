@@ -51,7 +51,7 @@ const App = () => {
             <Route path="/calendario" element={<Calendar {...disciplineProps} />} />
             <Route path="/arquivos" element={<Files {...disciplineProps} />} />
             <Route path="/analiticos" element={<Analytics {...disciplineProps} />} />
-            <Route path="*" element={<NotFound {...disciplineProps} />} />
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
