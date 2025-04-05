@@ -1,11 +1,11 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Layout } from "@/components/Layout";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
-import { File, FolderIcon, PenIcon, TrashIcon, UploadIcon } from "lucide-react";
+import { File, FolderIcon, PenIcon, TrashIcon, UploadIcon, DownloadIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 // File interface
@@ -16,6 +16,7 @@ interface FileItem {
   discipline: string;
   date: string;
   size: string;
+  data?: string; // Base64 data for the file
 }
 
 // Storage key for files
@@ -28,15 +29,39 @@ interface FilesProps {
   onDeleteDiscipline: (name: string) => void;
 }
 
+const getFileIcon = (fileType: string) => {
+  switch(fileType.toLowerCase()) {
+    case 'pdf':
+      return <File size={16} className="text-red-500" />;
+    case 'docx':
+    case 'doc':
+      return <File size={16} className="text-blue-500" />;
+    case 'xlsx':
+    case 'xls':
+      return <File size={16} className="text-green-500" />;
+    case 'pptx':
+    case 'ppt':
+      return <File size={16} className="text-orange-500" />;
+    case 'jpg':
+    case 'jpeg':
+    case 'png':
+    case 'gif':
+      return <File size={16} className="text-purple-500" />;
+    default:
+      return <File size={16} />;
+  }
+};
+
 export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipline }: FilesProps) {
   const [files, setFiles] = useState<FileItem[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const [newFileName, setNewFileName] = useState("");
-  const [newFileType, setNewFileType] = useState("pdf");
   const [newFileDiscipline, setNewFileDiscipline] = useState(disciplines[0] || "");
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingFile, setEditingFile] = useState<FileItem | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedFile, setUploadedFile] = useState<File | null>(null);
   const { toast } = useToast();
 
   // Load files from localStorage on component mount
@@ -58,6 +83,23 @@ export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, 
     file.type.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      setUploadedFile(file);
+      
+      // Auto-fill filename
+      const nameParts = file.name.split('.');
+      if (nameParts.length > 1) {
+        // Remove the extension from the name
+        nameParts.pop();
+        setNewFileName(nameParts.join('.'));
+      } else {
+        setNewFileName(file.name);
+      }
+    }
+  };
+
   const handleAddFile = () => {
     if (!newFileName.trim()) {
       toast({
@@ -68,25 +110,44 @@ export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, 
       return;
     }
 
-    const newFile: FileItem = {
-      id: Date.now().toString(),
-      name: newFileName,
-      type: newFileType,
-      discipline: newFileDiscipline,
-      date: new Date().toLocaleDateString('pt-BR'),
-      size: Math.floor(Math.random() * 10) + 1 + " MB"
+    if (!uploadedFile) {
+      toast({
+        title: "Arquivo não selecionado",
+        description: "Por favor, selecione um arquivo para upload",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Read the file data
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      if (event.target?.result) {
+        const fileExtension = uploadedFile.name.split('.').pop() || '';
+        
+        const newFile: FileItem = {
+          id: Date.now().toString(),
+          name: newFileName,
+          type: fileExtension,
+          discipline: newFileDiscipline,
+          date: new Date().toLocaleDateString('pt-BR'),
+          size: `${Math.round(uploadedFile.size / 1024)} KB`,
+          data: event.target.result.toString()
+        };
+
+        setFiles(prevFiles => [...prevFiles, newFile]);
+        setNewFileName("");
+        setNewFileDiscipline(disciplines[0] || "");
+        setUploadedFile(null);
+        setIsAddDialogOpen(false);
+
+        toast({
+          title: "Arquivo adicionado",
+          description: "O arquivo foi adicionado com sucesso!"
+        });
+      }
     };
-
-    setFiles(prevFiles => [...prevFiles, newFile]);
-    setNewFileName("");
-    setNewFileType("pdf");
-    setNewFileDiscipline(disciplines[0] || "");
-    setIsAddDialogOpen(false);
-
-    toast({
-      title: "Arquivo adicionado",
-      description: "O arquivo foi adicionado com sucesso!"
-    });
+    reader.readAsDataURL(uploadedFile);
   };
 
   const handleEditFile = () => {
@@ -111,6 +172,30 @@ export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, 
     toast({
       title: "Arquivo excluído",
       description: "O arquivo foi excluído com sucesso!"
+    });
+  };
+
+  const handleDownloadFile = (file: FileItem) => {
+    if (!file.data) {
+      toast({
+        title: "Erro ao baixar",
+        description: "Dados do arquivo não encontrados",
+        variant: "destructive"
+      });
+      return;
+    }
+
+    // Create a temporary anchor element to download the file
+    const link = document.createElement('a');
+    link.href = file.data;
+    link.download = `${file.name}.${file.type}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    toast({
+      title: "Download iniciado",
+      description: "O arquivo está sendo baixado"
     });
   };
 
@@ -139,6 +224,31 @@ export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, 
             </DialogHeader>
             <div className="space-y-4 mt-4">
               <div className="space-y-2">
+                <label htmlFor="fileUpload" className="text-sm font-medium">Selecionar Arquivo</label>
+                <div className="flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-6 transition-colors hover:border-primary">
+                  <input
+                    type="file"
+                    id="fileUpload"
+                    ref={fileInputRef}
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <UploadIcon size={40} className="text-gray-400 mb-2" />
+                  <p className="text-sm text-center text-gray-500 mb-2">
+                    {uploadedFile ? uploadedFile.name : "Clique para selecionar ou arraste um arquivo aqui"}
+                  </p>
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => fileInputRef.current?.click()}
+                    className="mt-2"
+                  >
+                    Escolher Arquivo
+                  </Button>
+                </div>
+              </div>
+              
+              <div className="space-y-2">
                 <label htmlFor="fileName" className="text-sm font-medium">Nome do Arquivo</label>
                 <Input
                   id="fileName"
@@ -148,24 +258,6 @@ export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, 
                   placeholder="Digite o nome do arquivo"
                   required
                 />
-              </div>
-              
-              <div className="space-y-2">
-                <label htmlFor="fileType" className="text-sm font-medium">Tipo de Arquivo</label>
-                <select
-                  id="fileType"
-                  value={newFileType}
-                  onChange={(e) => setNewFileType(e.target.value)}
-                  className="clay-input w-full"
-                >
-                  <option value="pdf">PDF</option>
-                  <option value="docx">DOCX</option>
-                  <option value="pptx">PPTX</option>
-                  <option value="xlsx">XLSX</option>
-                  <option value="txt">TXT</option>
-                  <option value="jpg">JPG</option>
-                  <option value="png">PNG</option>
-                </select>
               </div>
               
               <div className="space-y-2">
@@ -186,6 +278,7 @@ export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, 
                 <Button 
                   onClick={handleAddFile}
                   className="clay-button"
+                  disabled={!uploadedFile || !newFileName}
                 >
                   Adicionar Arquivo
                 </Button>
@@ -211,24 +304,6 @@ export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, 
                     placeholder="Digite o nome do arquivo"
                     required
                   />
-                </div>
-                
-                <div className="space-y-2">
-                  <label htmlFor="editFileType" className="text-sm font-medium">Tipo de Arquivo</label>
-                  <select
-                    id="editFileType"
-                    value={editingFile.type}
-                    onChange={(e) => setEditingFile({...editingFile, type: e.target.value})}
-                    className="clay-input w-full"
-                  >
-                    <option value="pdf">PDF</option>
-                    <option value="docx">DOCX</option>
-                    <option value="pptx">PPTX</option>
-                    <option value="xlsx">XLSX</option>
-                    <option value="txt">TXT</option>
-                    <option value="jpg">JPG</option>
-                    <option value="png">PNG</option>
-                  </select>
                 </div>
                 
                 <div className="space-y-2">
@@ -277,7 +352,7 @@ export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, 
                   <TableRow key={file.id}>
                     <TableCell className="font-medium flex items-center gap-2">
                       <div className={`p-2 rounded-lg bg-clay-blue`}>
-                        <File size={16} />
+                        {getFileIcon(file.type)}
                       </div>
                       <span>{file.name}.{file.type}</span>
                     </TableCell>
@@ -289,10 +364,19 @@ export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, 
                         <Button
                           variant="ghost"
                           size="icon"
+                          onClick={() => handleDownloadFile(file)}
+                          title="Baixar arquivo"
+                        >
+                          <DownloadIcon size={16} className="text-blue-500" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
                           onClick={() => {
                             setEditingFile(file);
                             setIsEditDialogOpen(true);
                           }}
+                          title="Editar informações"
                         >
                           <PenIcon size={16} />
                         </Button>
@@ -301,6 +385,7 @@ export default function Files({ disciplines, onAddDiscipline, onEditDiscipline, 
                           size="icon"
                           onClick={() => handleDeleteFile(file.id)}
                           className="text-red-500 hover:text-red-700"
+                          title="Excluir arquivo"
                         >
                           <TrashIcon size={16} />
                         </Button>

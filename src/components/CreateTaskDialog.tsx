@@ -1,28 +1,31 @@
-import { useState } from "react";
+
+import { useState, ReactNode } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogDescription } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { PlusIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { Task } from "@/types/TaskTypes";
+
 interface CreateTaskDialogProps {
   disciplines: string[];
   onCreateTask: (task: Omit<Task, 'id' | 'status'>) => void;
+  children: ReactNode;
 }
+
 export function CreateTaskDialog({
   disciplines,
-  onCreateTask
+  onCreateTask,
+  children
 }: CreateTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [discipline, setDiscipline] = useState("");
   const [dueDate, setDueDate] = useState("");
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!title || !discipline || !dueDate) {
@@ -33,6 +36,7 @@ export function CreateTaskDialog({
       });
       return;
     }
+    
     onCreateTask({
       title,
       description,
@@ -47,9 +51,11 @@ export function CreateTaskDialog({
     setDueDate("");
     setOpen(false);
   };
-  return <Dialog open={open} onOpenChange={setOpen}>
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        
+        {children}
       </DialogTrigger>
       <DialogContent className="bg-white rounded-2xl shadow-clay p-6 border-none max-w-md">
         <DialogHeader>
@@ -107,5 +113,6 @@ export function CreateTaskDialog({
           </div>
         </form>
       </DialogContent>
-    </Dialog>;
+    </Dialog>
+  );
 }

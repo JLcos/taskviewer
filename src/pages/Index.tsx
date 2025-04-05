@@ -4,23 +4,12 @@ import { Layout } from "@/components/Layout";
 import { StatusCard } from "@/components/StatusCard";
 import { TaskCard } from "@/components/TaskCard";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
-import { ClockIcon, CircleCheckIcon, CircleIcon } from "lucide-react";
+import { ClockIcon, CircleCheckIcon, CircleIcon, PlusIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Task, TaskStatus } from "@/types/TaskTypes";
 import { motion } from "framer-motion";
 import { DisciplineManager } from "@/components/DisciplineManager";
-
-// Sample data
-const initialTasks: Task[] = [
-  {
-    id: "1",
-    title: "Revisão",
-    description: "Fazer a Revisão de sociologia",
-    discipline: "Matemática",
-    status: "pendente",
-    dueDate: "10 de abril"
-  }
-];
+import { Button } from "@/components/ui/button";
 
 // Storage keys
 const TASKS_STORAGE_KEY = 'task-viewer-tasks';
@@ -33,7 +22,7 @@ interface IndexProps {
 }
 
 const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipline }: IndexProps) => {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
   
@@ -57,28 +46,29 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
     task.discipline.toLowerCase().includes(searchTerm.toLowerCase())
   );
   
-  // Get pending tasks for the rectangle display
+  // Get tasks by status
   const pendingTasks = tasks.filter(task => task.status === "pendente");
+  const inProgressTasks = tasks.filter(task => task.status === "em-andamento");
   
   // Calculate task statistics
   const totalTasks = tasks.length;
-  const inProgressTasks = tasks.filter(task => task.status === "em-andamento").length;
+  const inProgressTasksCount = inProgressTasks.length;
   const completedTasks = tasks.filter(task => task.status === "concluída").length;
-  const pendingTasksCount = tasks.filter(task => task.status === "pendente").length;
+  const pendingTasksCount = pendingTasks.length;
   
   const totalDisciplines = [...new Set(tasks.map(task => task.discipline))].length;
   const completedPercentage = totalTasks > 0 ? Math.round((completedTasks / totalTasks) * 100) : 0;
-  const inProgressPercentage = totalTasks > 0 ? Math.round((inProgressTasks / totalTasks) * 100) : 0;
+  const inProgressPercentage = totalTasks > 0 ? Math.round((inProgressTasksCount / totalTasks) * 100) : 0;
 
   // Handle task creation
-  const handleCreateTask = (newTask: any) => {
+  const handleCreateTask = (newTask: Omit<Task, 'id' | 'status'>) => {
     const taskToAdd: Task = {
       id: Date.now().toString(),
       title: newTask.title,
       description: newTask.description,
       discipline: newTask.discipline,
       status: "pendente",
-      dueDate: formatDate(newTask.dueDate),
+      dueDate: newTask.dueDate,
     };
     
     setTasks(prevTasks => [...prevTasks, taskToAdd]);
@@ -123,18 +113,6 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
     });
   };
   
-  // Format date from YYYY-MM-DD to "DD de Month"
-  const formatDate = (dateString: string) => {
-    const date = new Date(dateString);
-    const day = date.getDate();
-    const monthNames = [
-      "janeiro", "fevereiro", "março", "abril", "maio", "junho",
-      "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
-    ];
-    const month = monthNames[date.getMonth()];
-    return `${day} de ${month}`;
-  };
-  
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -172,11 +150,16 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
         <CreateTaskDialog 
           disciplines={disciplines}
           onCreateTask={handleCreateTask}
-        />
+        >
+          <Button className="clay-button bg-primary text-white flex items-center gap-2">
+            <PlusIcon size={16} />
+            <span>Nova Tarefa</span>
+          </Button>
+        </CreateTaskDialog>
       </motion.div>
       
       <motion.div 
-        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8"
+        className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
         variants={containerVariants}
         initial="hidden"
         animate="visible"
@@ -193,7 +176,7 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
         <motion.div variants={itemVariants}>
           <StatusCard
             title="Em Andamento"
-            value={inProgressTasks}
+            value={inProgressTasksCount}
             icon={<ClockIcon size={24} className="text-orange-600" />}
             color="bg-clay-orange"
             subtitle={`${inProgressPercentage}% do total`}
@@ -210,36 +193,70 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
         </motion.div>
       </motion.div>
       
-      {/* Pending Tasks Rectangle */}
-      <motion.div 
-        className="clay-card mb-8"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-      >
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-xl font-bold">Tarefas Pendentes ({pendingTasksCount})</h2>
-        </div>
+      {/* Task sections */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        {/* Pending Tasks */}
+        <motion.div 
+          className="clay-card"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Tarefas Pendentes ({pendingTasksCount})</h2>
+          </div>
+          
+          <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+            {pendingTasks.length > 0 ? (
+              pendingTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onStatusChange={handleStatusChange}
+                  onEdit={handleEditTask}
+                  onDelete={handleDeleteTask}
+                  disciplines={disciplines}
+                />
+              ))
+            ) : (
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <p className="text-muted-foreground">Não há tarefas pendentes</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
         
-        <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
-          {pendingTasks.length > 0 ? (
-            pendingTasks.map((task) => (
-              <TaskCard
-                key={task.id}
-                task={task}
-                onStatusChange={handleStatusChange}
-                onEdit={handleEditTask}
-                onDelete={handleDeleteTask}
-                disciplines={disciplines}
-              />
-            ))
-          ) : (
-            <div className="text-center p-4 bg-gray-50 rounded-lg">
-              <p className="text-muted-foreground">Não há tarefas pendentes</p>
-            </div>
-          )}
-        </div>
-      </motion.div>
+        {/* In Progress Tasks */}
+        <motion.div 
+          className="clay-card"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Em Andamento ({inProgressTasksCount})</h2>
+          </div>
+          
+          <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+            {inProgressTasks.length > 0 ? (
+              inProgressTasks.map((task) => (
+                <TaskCard
+                  key={task.id}
+                  task={task}
+                  onStatusChange={handleStatusChange}
+                  onEdit={handleEditTask}
+                  onDelete={handleDeleteTask}
+                  disciplines={disciplines}
+                />
+              ))
+            ) : (
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <p className="text-muted-foreground">Não há tarefas em andamento</p>
+              </div>
+            )}
+          </div>
+        </motion.div>
+      </div>
       
       <motion.h2 
         className="text-2xl font-bold mb-4"
@@ -296,7 +313,12 @@ const Index = ({ disciplines, onAddDiscipline, onEditDiscipline, onDeleteDiscipl
                 <CreateTaskDialog 
                   disciplines={disciplines}
                   onCreateTask={handleCreateTask}
-                />
+                >
+                  <Button className="clay-button bg-primary text-white flex items-center gap-2">
+                    <PlusIcon size={16} />
+                    <span>Nova Tarefa</span>
+                  </Button>
+                </CreateTaskDialog>
               </motion.div>
             )}
           </motion.div>
