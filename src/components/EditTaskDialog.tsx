@@ -9,7 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 interface EditTaskDialogProps {
   task: Task;
   disciplines: string[];
-  onUpdateTask: (id: string, updatedTask: Partial<Task>) => void;
+  onUpdateTask: (updatedTask: Partial<Task>) => void;
 }
 
 export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDialogProps) {
@@ -35,7 +35,7 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     
-    onUpdateTask(task.id, {
+    onUpdateTask({
       title,
       description,
       discipline,
@@ -58,7 +58,7 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
           Editar
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-white rounded-2xl shadow-clay border-none">
+      <DialogContent className="bg-white rounded-2xl shadow-clay border-none sm:max-w-[425px] max-w-[95vw] mx-auto">
         <DialogHeader>
           <DialogTitle>Editar Tarefa</DialogTitle>
           <DialogDescription>

@@ -11,15 +11,16 @@ import { motion } from "framer-motion";
 import { DisciplineManager } from "@/components/DisciplineManager";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
+import * as TaskService from "@/services/TaskService";
 
-// Storage keys
-const TASKS_STORAGE_KEY = 'task-viewer-tasks';
 interface IndexProps {
   disciplines: string[];
   onAddDiscipline: (name: string) => void;
   onEditDiscipline: (oldName: string, newName: string) => void;
   onDeleteDiscipline: (name: string) => void;
 }
+
 const Index = ({
   disciplines,
   onAddDiscipline,
@@ -29,19 +30,28 @@ const Index = ({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
-  // Load tasks from localStorage on component mount
+  // Load tasks and register for real-time updates
   useEffect(() => {
-    const savedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
-    }
+    const loadTasks = () => {
+      setTasks(TaskService.getTasks());
+    };
+    
+    // Initial load
+    loadTasks();
+    
+    // Register for updates
+    const cleanup = TaskService.registerForUpdates(loadTasks);
+    
+    // Listen for local storage changes in the same tab
+    window.addEventListener('local-storage-updated', loadTasks);
+    
+    return () => {
+      cleanup();
+      window.removeEventListener('local-storage-updated', loadTasks);
+    };
   }, []);
-
-  // Save tasks to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
-  }, [tasks]);
 
   // Filter tasks by search term
   const filteredTasks = tasks.filter(task => 
@@ -66,15 +76,8 @@ const Index = ({
 
   // Handle task creation
   const handleCreateTask = (newTask: Omit<Task, 'id' | 'status'>) => {
-    const taskToAdd: Task = {
-      id: Date.now().toString(),
-      title: newTask.title,
-      description: newTask.description,
-      discipline: newTask.discipline,
-      status: "pendente",
-      dueDate: newTask.dueDate
-    };
-    setTasks(prevTasks => [...prevTasks, taskToAdd]);
+    TaskService.addTask(newTask);
+    
     toast({
       title: "Tarefa criada",
       description: "A tarefa foi criada com sucesso!"
@@ -83,10 +86,8 @@ const Index = ({
 
   // Handle task status change
   const handleStatusChange = (id: string, newStatus: TaskStatus) => {
-    setTasks(prevTasks => prevTasks.map(task => task.id === id ? {
-      ...task,
-      status: newStatus
-    } : task));
+    TaskService.changeTaskStatus(id, newStatus);
+    
     toast({
       title: "Status atualizado",
       description: "O status da tarefa foi atualizado com sucesso!"
@@ -95,10 +96,8 @@ const Index = ({
 
   // Handle task edit
   const handleEditTask = (id: string, updatedTask: Partial<Task>) => {
-    setTasks(prevTasks => prevTasks.map(task => task.id === id ? {
-      ...task,
-      ...updatedTask
-    } : task));
+    TaskService.updateTask(id, updatedTask);
+    
     toast({
       title: "Tarefa atualizada",
       description: "A tarefa foi atualizada com sucesso!"
@@ -107,7 +106,8 @@ const Index = ({
 
   // Handle task deletion
   const handleDeleteTask = (id: string) => {
-    setTasks(prevTasks => prevTasks.filter(task => task.id !== id));
+    TaskService.deleteTask(id);
+    
     toast({
       title: "Tarefa excluída",
       description: "A tarefa foi excluída com sucesso!"
@@ -138,26 +138,43 @@ const Index = ({
     }
   };
   
-  return <Layout disciplines={disciplines} onAddDiscipline={onAddDiscipline} onEditDiscipline={onEditDiscipline} onDeleteDiscipline={onDeleteDiscipline} onSearch={setSearchTerm}>
-      <motion.div className="flex items-center justify-between mb-8" initial={{
-      opacity: 0,
-      y: -10
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      duration: 0.3
-    }}>
-        <h1 className="text-3xl font-bold">Painel</h1>
+  return (
+    <Layout 
+      disciplines={disciplines} 
+      onAddDiscipline={onAddDiscipline} 
+      onEditDiscipline={onEditDiscipline} 
+      onDeleteDiscipline={onDeleteDiscipline} 
+      onSearch={setSearchTerm}
+    >
+      <motion.div 
+        className="flex items-center justify-between mb-6" 
+        initial={{
+          opacity: 0,
+          y: -10
+        }} 
+        animate={{
+          opacity: 1,
+          y: 0
+        }} 
+        transition={{
+          duration: 0.3
+        }}
+      >
+        <h1 className="text-2xl md:text-3xl font-bold">Painel</h1>
         <CreateTaskDialog disciplines={disciplines} onCreateTask={handleCreateTask}>
           <Button className="clay-button bg-primary text-white flex items-center gap-2">
             <PlusIcon size={16} />
-            <span>Nova Tarefa</span>
+            <span className={isMobile ? "hidden" : "inline"}>Nova Tarefa</span>
           </Button>
         </CreateTaskDialog>
       </motion.div>
       
-      <motion.div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div 
+        className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6 mb-6" 
+        variants={containerVariants} 
+        initial="hidden" 
+        animate="visible"
+      >
         <motion.div variants={itemVariants}>
           <StatusCard 
             title="Tarefas Pendentes" 
@@ -201,7 +218,7 @@ const Index = ({
       
       {/* Quick Links */}
       <motion.div 
-        className="clay-card mb-8 bg-gradient-to-r from-primary/5 to-accent/5"
+        className="clay-card mb-6 bg-gradient-to-r from-primary/5 to-accent/5"
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.2 }}
@@ -219,82 +236,152 @@ const Index = ({
       </motion.div>
       
       {/* Task sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
         {/* Pending Tasks */}
-        <motion.div className="clay-card" initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.2
-      }}>
+        <motion.div 
+          className="clay-card" 
+          initial={{
+            opacity: 0,
+            y: 20
+          }} 
+          animate={{
+            opacity: 1,
+            y: 0
+          }} 
+          transition={{
+            delay: 0.2
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">Tarefas Pendentes ({pendingTasksCount})</h2>
           </div>
           
-          <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
-            {pendingTasks.length > 0 ? pendingTasks.map(task => <TaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onEdit={handleEditTask} onDelete={handleDeleteTask} disciplines={disciplines} />) : <div className="text-center p-4 bg-gray-50 rounded-lg">
+          <div className="space-y-4 max-h-60 md:max-h-80 overflow-y-auto pr-2">
+            {pendingTasks.length > 0 ? (
+              pendingTasks.map(task => (
+                <TaskCard 
+                  key={task.id} 
+                  task={task} 
+                  onStatusChange={handleStatusChange} 
+                  onEdit={handleEditTask} 
+                  onDelete={handleDeleteTask} 
+                  disciplines={disciplines} 
+                />
+              ))
+            ) : (
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <p className="text-muted-foreground">Não há tarefas pendentes</p>
-              </div>}
+              </div>
+            )}
           </div>
         </motion.div>
         
         {/* In Progress Tasks */}
-        <motion.div className="clay-card" initial={{
-        opacity: 0,
-        y: 20
-      }} animate={{
-        opacity: 1,
-        y: 0
-      }} transition={{
-        delay: 0.3
-      }}>
+        <motion.div 
+          className="clay-card" 
+          initial={{
+            opacity: 0,
+            y: 20
+          }} 
+          animate={{
+            opacity: 1,
+            y: 0
+          }} 
+          transition={{
+            delay: 0.3
+          }}
+        >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold">Em Andamento ({inProgressTasksCount})</h2>
           </div>
           
-          <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
-            {inProgressTasks.length > 0 ? inProgressTasks.map(task => <TaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onEdit={handleEditTask} onDelete={handleDeleteTask} disciplines={disciplines} />) : <div className="text-center p-4 bg-gray-50 rounded-lg">
+          <div className="space-y-4 max-h-60 md:max-h-80 overflow-y-auto pr-2">
+            {inProgressTasks.length > 0 ? (
+              inProgressTasks.map(task => (
+                <TaskCard 
+                  key={task.id} 
+                  task={task} 
+                  onStatusChange={handleStatusChange} 
+                  onEdit={handleEditTask} 
+                  onDelete={handleDeleteTask} 
+                  disciplines={disciplines} 
+                />
+              ))
+            ) : (
+              <div className="text-center p-4 bg-gray-50 rounded-lg">
                 <p className="text-muted-foreground">Não há tarefas em andamento</p>
-              </div>}
+              </div>
+            )}
           </div>
         </motion.div>
       </div>
       
-      <motion.h2 className="text-2xl font-bold mb-4" initial={{
-      opacity: 0,
-      x: -20
-    }} animate={{
-      opacity: 1,
-      x: 0
-    }} transition={{
-      delay: 0.3
-    }}>
+      <motion.h2 
+        className="text-xl md:text-2xl font-bold mb-4" 
+        initial={{
+          opacity: 0,
+          x: -20
+        }} 
+        animate={{
+          opacity: 1,
+          x: 0
+        }} 
+        transition={{
+          delay: 0.3
+        }}
+      >
         Todas as Tarefas
       </motion.h2>
-      <motion.div className="clay-card mb-8" variants={containerVariants} initial="hidden" animate="visible">
+      
+      <motion.div 
+        className="clay-card mb-8" 
+        variants={containerVariants} 
+        initial="hidden" 
+        animate="visible"
+      >
         <div className="space-y-4">
-          {filteredTasks.length > 0 ? filteredTasks.map((task, index) => (
-            <motion.div key={task.id} variants={itemVariants} initial="hidden" animate="visible" transition={{
-              delay: 0.1 * index
-            }} whileHover={{
-              scale: 1.01
-            }}>
-              <TaskCard task={task} onStatusChange={handleStatusChange} onEdit={handleEditTask} onDelete={handleDeleteTask} disciplines={disciplines} />
-            </motion.div>
-          )) : (
-            <motion.div className="flex flex-col items-center p-8" variants={itemVariants}>
-              <motion.div className="text-6xl mb-4" initial={{
-                scale: 0.8
-              }} animate={{
-                scale: 1
-              }} transition={{
-                duration: 0.5,
-                delay: 0.2,
-                type: "spring"
-              }}>
+          {filteredTasks.length > 0 ? (
+            filteredTasks.map((task, index) => (
+              <motion.div 
+                key={task.id} 
+                variants={itemVariants} 
+                initial="hidden" 
+                animate="visible" 
+                transition={{
+                  delay: 0.1 * index
+                }} 
+                whileHover={{
+                  scale: 1.01
+                }}
+              >
+                <TaskCard 
+                  task={task} 
+                  onStatusChange={handleStatusChange} 
+                  onEdit={handleEditTask} 
+                  onDelete={handleDeleteTask} 
+                  disciplines={disciplines} 
+                />
+              </motion.div>
+            ))
+          ) : (
+            <motion.div 
+              className="flex flex-col items-center p-8" 
+              variants={itemVariants}
+            >
+              <motion.div 
+                className="text-6xl mb-4" 
+                initial={{
+                  scale: 0.8
+                }} 
+                animate={{
+                  scale: 1
+                }} 
+                transition={{
+                  duration: 0.5,
+                  delay: 0.2,
+                  type: "spring"
+                }}
+              >
                 📝
               </motion.div>
               <h3 className="text-xl font-medium mb-2">Sem tarefas no momento</h3>
@@ -302,11 +389,14 @@ const Index = ({
                 {searchTerm ? "Nenhuma tarefa corresponde à sua pesquisa." : "Parece que você não tem nenhuma tarefa ainda. Que tal criar uma nova?"}
               </p>
               {!searchTerm && (
-                <motion.div whileHover={{
-                  scale: 1.05
-                }} whileTap={{
-                  scale: 0.95
-                }}>
+                <motion.div 
+                  whileHover={{
+                    scale: 1.05
+                  }} 
+                  whileTap={{
+                    scale: 0.95
+                  }}
+                >
                   <CreateTaskDialog disciplines={disciplines} onCreateTask={handleCreateTask}>
                     <Button className="clay-button bg-primary text-white flex items-center gap-2">
                       <PlusIcon size={16} />
@@ -320,28 +410,46 @@ const Index = ({
         </div>
       </motion.div>
       
-      <motion.h2 className="text-2xl font-bold mt-8 mb-4" initial={{
-      opacity: 0,
-      x: -20
-    }} animate={{
-      opacity: 1,
-      x: 0
-    }} transition={{
-      delay: 0.4
-    }}>
+      <motion.h2 
+        className="text-xl md:text-2xl font-bold mt-8 mb-4" 
+        initial={{
+          opacity: 0,
+          x: -20
+        }} 
+        animate={{
+          opacity: 1,
+          x: 0
+        }} 
+        transition={{
+          delay: 0.4
+        }}
+      >
         Disciplinas
       </motion.h2>
-      <motion.div className="clay-card" initial={{
-      opacity: 0,
-      y: 20
-    }} animate={{
-      opacity: 1,
-      y: 0
-    }} transition={{
-      delay: 0.5
-    }}>
-        <DisciplineManager disciplines={disciplines} onAddDiscipline={onAddDiscipline} onEditDiscipline={onEditDiscipline} onDeleteDiscipline={onDeleteDiscipline} />
+      
+      <motion.div 
+        className="clay-card" 
+        initial={{
+          opacity: 0,
+          y: 20
+        }} 
+        animate={{
+          opacity: 1,
+          y: 0
+        }} 
+        transition={{
+          delay: 0.5
+        }}
+      >
+        <DisciplineManager 
+          disciplines={disciplines} 
+          onAddDiscipline={onAddDiscipline} 
+          onEditDiscipline={onEditDiscipline} 
+          onDeleteDiscipline={onDeleteDiscipline} 
+        />
       </motion.div>
-    </Layout>;
+    </Layout>
+  );
 };
+
 export default Index;

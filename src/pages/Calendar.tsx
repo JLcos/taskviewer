@@ -9,9 +9,8 @@ import { Task, TaskStatus } from "@/types/TaskTypes";
 import { motion } from "framer-motion";
 import { CalendarIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
-
-// Storage key for tasks
-const TASKS_STORAGE_KEY = 'task-viewer-tasks';
+import { useIsMobile } from "@/hooks/use-mobile";
+import * as TaskService from "@/services/TaskService";
 
 const Calendar = ({ 
   disciplines,
@@ -28,19 +27,28 @@ const Calendar = ({
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  const isMobile = useIsMobile();
   
-  // Load tasks from localStorage
+  // Load tasks and register for real-time updates
   useEffect(() => {
-    const savedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
-    if (savedTasks) {
-      setTasks(JSON.parse(savedTasks));
-    }
+    const loadTasks = () => {
+      setTasks(TaskService.getTasks());
+    };
+    
+    // Initial load
+    loadTasks();
+    
+    // Register for updates
+    const cleanup = TaskService.registerForUpdates(loadTasks);
+    
+    // Listen for local storage changes in the same tab
+    window.addEventListener('local-storage-updated', loadTasks);
+    
+    return () => {
+      cleanup();
+      window.removeEventListener('local-storage-updated', loadTasks);
+    };
   }, []);
-  
-  // Save tasks to localStorage
-  useEffect(() => {
-    localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
-  }, [tasks]);
   
   // Format the selected date to match the task dueDate format
   const formatSelectedDate = (date: Date | undefined): string => {
@@ -86,7 +94,7 @@ const Calendar = ({
     return dates;
   }, [tasks]);
   
-  // Filter tasks by both date and search term
+  // Filter tasks by search term
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = searchTerm === "" || 
       task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -98,16 +106,12 @@ const Calendar = ({
   
   // Handle task creation
   const handleCreateTask = (newTask: any) => {
-    const taskToAdd: Task = {
-      id: Date.now().toString(),
+    const taskToAdd = TaskService.addTask({
       title: newTask.title,
       description: newTask.description,
       discipline: newTask.discipline,
-      status: "pendente",
       dueDate: formatDate(newTask.dueDate),
-    };
-    
-    setTasks(prevTasks => [...prevTasks, taskToAdd]);
+    });
     
     toast({
       title: "Tarefa criada",
@@ -117,9 +121,7 @@ const Calendar = ({
   
   // Handle task status change
   const handleStatusChange = (id: string, newStatus: TaskStatus) => {
-    setTasks(prevTasks => prevTasks.map(task => 
-      task.id === id ? { ...task, status: newStatus } : task
-    ));
+    TaskService.changeTaskStatus(id, newStatus);
     
     toast({
       title: "Status atualizado",
@@ -129,9 +131,7 @@ const Calendar = ({
   
   // Handle task edit
   const handleEditTask = (id: string, updatedTask: Partial<Task>) => {
-    setTasks(prevTasks => prevTasks.map(task => 
-      task.id === id ? { ...task, ...updatedTask } : task
-    ));
+    TaskService.updateTask(id, updatedTask);
     
     toast({
       title: "Tarefa atualizada",
@@ -141,7 +141,7 @@ const Calendar = ({
   
   // Handle task deletion
   const handleDeleteTask = (id: string) => {
-    setTasks(tasks.filter(task => task.id !== id));
+    TaskService.deleteTask(id);
     
     toast({
       title: "Tarefa excluída",
@@ -175,8 +175,9 @@ const Calendar = ({
     }
   };
 
-  // Get tasks for today's date
-  const todaysTasks = tasks.filter(task => task.dueDate === formatSelectedDate(date));
+  // Get tasks for selected date
+  const selectedDateFormatted = formatSelectedDate(date);
+  const todaysTasks = tasks.filter(task => task.dueDate === selectedDateFormatted);
   const pendingTasksCount = todaysTasks.filter(t => t.status === "pendente").length;
   const inProgressTasksCount = todaysTasks.filter(t => t.status === "em-andamento").length;
   const completedTasksCount = todaysTasks.filter(t => t.status === "concluída").length;
@@ -201,13 +202,13 @@ const Calendar = ({
         >
           <Button className="clay-button bg-primary text-white flex items-center gap-2">
             <PlusIcon size={16} />
-            <span>Nova Tarefa</span>
+            <span className={isMobile ? "hidden" : "inline"}>Nova Tarefa</span>
           </Button>
         </CreateTaskDialog>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-4">
+        <div className={isMobile ? "col-span-1" : "lg:col-span-4"}>
           <motion.div 
             className="clay-card rounded-xl shadow-lg overflow-hidden"
             initial={{ opacity: 0, scale: 0.95 }}
@@ -270,7 +271,7 @@ const Calendar = ({
           </motion.div>
         </div>
         
-        <div className="lg:col-span-8">
+        <div className={isMobile ? "col-span-1" : "lg:col-span-8"}>
           <motion.div 
             className="clay-card h-full bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg"
             initial={{ opacity: 0, y: 20 }}

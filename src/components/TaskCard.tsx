@@ -4,6 +4,7 @@ import { CheckIcon, ClockIcon, MoreVerticalIcon, CalendarIcon } from "lucide-rea
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Task, TaskStatus } from "@/types/TaskTypes";
 import { EditTaskDialog } from "@/components/EditTaskDialog";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface TaskCardProps {
   task: Task;
@@ -21,6 +22,7 @@ export function TaskCard({
   disciplines
 }: TaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  const isMobile = useIsMobile();
   
   const statusColors = {
     "pendente": "bg-clay-yellow text-yellow-700",
@@ -40,7 +42,7 @@ export function TaskCard({
       onMouseEnter={() => setIsHovered(true)} 
       onMouseLeave={() => setIsHovered(false)}
     >
-      <div className="flex items-start justify-between">
+      <div className={`flex items-start ${isMobile ? 'flex-col' : 'justify-between'}`}>
         <div className="flex items-start">
           <div className="mr-3 mt-1">
             {task.status === "concluída" ? (
@@ -66,7 +68,7 @@ export function TaskCard({
         </div>
         
         <DropdownMenu>
-          <DropdownMenuTrigger className="p-2 rounded-full hover:bg-muted">
+          <DropdownMenuTrigger className={`p-2 rounded-full hover:bg-muted ${isMobile ? 'mt-3 ml-auto' : ''}`}>
             <MoreVerticalIcon size={18} />
           </DropdownMenuTrigger>
           <DropdownMenuContent className="bg-white rounded-xl shadow-clay p-2 min-w-[220px]">
