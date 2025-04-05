@@ -7,7 +7,11 @@ import { CreateTaskDialog } from "@/components/CreateTaskDialog";
 import { useToast } from "@/hooks/use-toast";
 import { Task, TaskStatus } from "@/types/TaskTypes";
 import { motion } from "framer-motion";
-import { CalendarIcon } from "lucide-react";
+import { CalendarIcon, PlusIcon } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+// Storage key for tasks
+const TASKS_STORAGE_KEY = 'task-viewer-tasks';
 
 const Calendar = ({ 
   disciplines,
@@ -21,18 +25,22 @@ const Calendar = ({
   onDeleteDiscipline: (name: string) => void;
 }) => {
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [tasks, setTasks] = useState<Task[]>([
-    {
-      id: "1",
-      title: "Revisão",
-      description: "Fazer a Revisão de sociologia",
-      discipline: "Matemática",
-      status: "pendente",
-      dueDate: "10 de abril"
-    }
-  ]);
+  const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
   const { toast } = useToast();
+  
+  // Load tasks from localStorage
+  useEffect(() => {
+    const savedTasks = localStorage.getItem(TASKS_STORAGE_KEY);
+    if (savedTasks) {
+      setTasks(JSON.parse(savedTasks));
+    }
+  }, []);
+  
+  // Save tasks to localStorage
+  useEffect(() => {
+    localStorage.setItem(TASKS_STORAGE_KEY, JSON.stringify(tasks));
+  }, [tasks]);
   
   // Format the selected date to match the task dueDate format
   const formatSelectedDate = (date: Date | undefined): string => {
@@ -73,7 +81,7 @@ const Calendar = ({
       dueDate: formatDate(newTask.dueDate),
     };
     
-    setTasks([...tasks, taskToAdd]);
+    setTasks(prevTasks => [...prevTasks, taskToAdd]);
     
     toast({
       title: "Tarefa criada",
@@ -83,7 +91,7 @@ const Calendar = ({
   
   // Handle task status change
   const handleStatusChange = (id: string, newStatus: TaskStatus) => {
-    setTasks(tasks.map(task => 
+    setTasks(prevTasks => prevTasks.map(task => 
       task.id === id ? { ...task, status: newStatus } : task
     ));
     
@@ -95,7 +103,7 @@ const Calendar = ({
   
   // Handle task edit
   const handleEditTask = (id: string, updatedTask: Partial<Task>) => {
-    setTasks(tasks.map(task => 
+    setTasks(prevTasks => prevTasks.map(task => 
       task.id === id ? { ...task, ...updatedTask } : task
     ));
     
@@ -115,11 +123,10 @@ const Calendar = ({
     });
   };
   
-  // Format date from YYYY-MM-DD to "DD de Month" - Fixed date issue
+  // Format date from YYYY-MM-DD to "DD de Month"
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     
-    // No need to add a day anymore - this was causing the date issue
     const day = date.getDate();
     const monthNames = [
       "janeiro", "fevereiro", "março", "abril", "maio", "junho",
@@ -142,6 +149,12 @@ const Calendar = ({
     }
   };
 
+  // Get tasks for today's date
+  const todaysTasks = tasks.filter(task => task.dueDate === formatSelectedDate(date));
+  const pendingTasksCount = todaysTasks.filter(t => t.status === "pendente").length;
+  const inProgressTasksCount = todaysTasks.filter(t => t.status === "em-andamento").length;
+  const completedTasksCount = todaysTasks.filter(t => t.status === "concluída").length;
+
   return (
     <Layout 
       disciplines={disciplines} 
@@ -159,7 +172,12 @@ const Calendar = ({
         <CreateTaskDialog 
           disciplines={disciplines}
           onCreateTask={handleCreateTask}
-        />
+        >
+          <Button className="clay-button bg-primary text-white flex items-center gap-2">
+            <PlusIcon size={16} />
+            <span>Nova Tarefa</span>
+          </Button>
+        </CreateTaskDialog>
       </div>
       
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -201,24 +219,24 @@ const Calendar = ({
             <div className="p-4 space-y-3">
               <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
                 <span className="font-medium">Total de tarefas:</span>
-                <span className="font-bold text-lg bg-primary/20 px-3 py-1 rounded-full">{filteredTasks.length}</span>
+                <span className="font-bold text-lg bg-primary/20 px-3 py-1 rounded-full">{todaysTasks.length}</span>
               </div>
               <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
                 <span className="font-medium">Pendentes:</span>
                 <span className="font-bold text-lg bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">
-                  {filteredTasks.filter(t => t.status === "pendente").length}
+                  {pendingTasksCount}
                 </span>
               </div>
               <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
                 <span className="font-medium">Em andamento:</span>
                 <span className="font-bold text-lg bg-orange-100 text-orange-700 px-3 py-1 rounded-full">
-                  {filteredTasks.filter(t => t.status === "em-andamento").length}
+                  {inProgressTasksCount}
                 </span>
               </div>
               <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
                 <span className="font-medium">Concluídas:</span>
                 <span className="font-bold text-lg bg-green-100 text-green-700 px-3 py-1 rounded-full">
-                  {filteredTasks.filter(t => t.status === "concluída").length}
+                  {completedTasksCount}
                 </span>
               </div>
             </div>
@@ -239,8 +257,8 @@ const Calendar = ({
             </div>
             
             <div className="p-4 space-y-4 max-h-[calc(100vh-20rem)] overflow-y-auto">
-              {filteredTasks.length > 0 ? (
-                filteredTasks.map((task, index) => (
+              {todaysTasks.length > 0 ? (
+                todaysTasks.map((task, index) => (
                   <motion.div
                     key={task.id}
                     initial={{ opacity: 0, y: 20 }}

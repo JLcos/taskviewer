@@ -21,14 +21,16 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
   const [status, setStatus] = useState(task.status);
   const { toast } = useToast();
 
-  // Update local state when task changes
+  // Update local state when task changes or dialog opens
   useEffect(() => {
-    setTitle(task.title);
-    setDescription(task.description);
-    setDiscipline(task.discipline);
-    setDueDate(formatDateForInput(task.dueDate));
-    setStatus(task.status);
-  }, [task]);
+    if (isOpen) {
+      setTitle(task.title);
+      setDescription(task.description);
+      setDiscipline(task.discipline);
+      setDueDate(formatDateForInput(task.dueDate));
+      setStatus(task.status);
+    }
+  }, [task, isOpen]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,7 +54,7 @@ export function EditTaskDialog({ task, disciplines, onUpdateTask }: EditTaskDial
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" className="w-full text-left justify-start">
           Editar
         </Button>
       </DialogTrigger>
@@ -179,7 +181,6 @@ function formatDateForInput(dateString: string): string {
 function formatDateForDisplay(dateString: string): string {
   const date = new Date(dateString);
   
-  // Removed the date adjustment that was causing the issue
   const day = date.getDate();
   const monthNames = [
     "janeiro", "fevereiro", "março", "abril", "maio", "junho",

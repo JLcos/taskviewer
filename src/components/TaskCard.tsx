@@ -1,8 +1,10 @@
+
 import { useState } from "react";
-import { CheckIcon, ClockIcon, MoreVerticalIcon } from "lucide-react";
+import { CheckIcon, ClockIcon, MoreVerticalIcon, CalendarIcon } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Task, TaskStatus } from "@/types/TaskTypes";
 import { EditTaskDialog } from "@/components/EditTaskDialog";
+
 interface TaskCardProps {
   task: Task;
   onStatusChange: (id: string, status: TaskStatus) => void;
@@ -10,6 +12,7 @@ interface TaskCardProps {
   onDelete: (id: string) => void;
   disciplines: string[];
 }
+
 export function TaskCard({
   task,
   onStatusChange,
@@ -18,27 +21,47 @@ export function TaskCard({
   disciplines
 }: TaskCardProps) {
   const [isHovered, setIsHovered] = useState(false);
+  
   const statusColors = {
     "pendente": "bg-clay-yellow text-yellow-700",
     "em-andamento": "bg-clay-orange text-orange-700",
     "concluída": "bg-clay-mint text-green-700"
   };
+  
   const statusLabels = {
     "pendente": "Pendente",
     "em-andamento": "Em Andamento",
     "concluída": "Concluída"
   };
-  return <div className="clay-card hover:shadow-lg transition-all" onMouseEnter={() => setIsHovered(true)} onMouseLeave={() => setIsHovered(false)}>
+  
+  return (
+    <div 
+      className="clay-card hover:shadow-lg transition-all" 
+      onMouseEnter={() => setIsHovered(true)} 
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="flex items-start justify-between">
-        <div className="flex items-center">
-          <div className="mr-3">
-            <ClockIcon size={20} className="text-primary" />
+        <div className="flex items-start">
+          <div className="mr-3 mt-1">
+            {task.status === "concluída" ? (
+              <CheckIcon size={20} className="text-green-600" />
+            ) : task.status === "em-andamento" ? (
+              <ClockIcon size={20} className="text-orange-600" />
+            ) : (
+              <ClockIcon size={20} className="text-primary" />
+            )}
           </div>
-          <div className="flex items-center">
+          <div>
             <h3 className="text-lg font-semibold">{task.title}</h3>
-            <span className="inline-block px-3 py-1 rounded-full bg-clay-blue text-blue-700 text-sm font-medium mt-1">
-              {task.discipline}
-            </span>
+            <div className="flex flex-wrap gap-2 mt-1">
+              <span className="inline-block px-3 py-1 rounded-full bg-clay-blue text-blue-700 text-sm font-medium">
+                {task.discipline}
+              </span>
+              <span className={`inline-block px-3 py-1 rounded-full text-sm font-medium ${statusColors[task.status]}`}>
+                {statusLabels[task.status]}
+              </span>
+            </div>
+            <p className="mt-2 text-gray-600">{task.description}</p>
           </div>
         </div>
         
@@ -67,13 +90,10 @@ export function TaskCard({
         </DropdownMenu>
       </div>
       
-      {task.description}
-      
-      <div className="flex items-center justify-between mt-4 px-0 my-[18px]">
-        
-        <span className="text-sm text-muted-foreground">
-          {task.dueDate}
-        </span>
+      <div className="flex items-center mt-4 text-sm text-muted-foreground">
+        <CalendarIcon size={16} className="mr-1" />
+        <span>{task.dueDate}</span>
       </div>
-    </div>;
+    </div>
+  );
 }

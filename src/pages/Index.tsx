@@ -1,14 +1,16 @@
+
 import { useState, useEffect } from "react";
 import { Layout } from "@/components/Layout";
 import { StatusCard } from "@/components/StatusCard";
 import { TaskCard } from "@/components/TaskCard";
 import { CreateTaskDialog } from "@/components/CreateTaskDialog";
-import { ClockIcon, CircleCheckIcon, CircleIcon, PlusIcon } from "lucide-react";
+import { ClockIcon, CircleCheckIcon, CircleIcon, PlusIcon, BookOpenIcon, CalendarIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Task, TaskStatus } from "@/types/TaskTypes";
 import { motion } from "framer-motion";
 import { DisciplineManager } from "@/components/DisciplineManager";
 import { Button } from "@/components/ui/button";
+import { Link } from "react-router-dom";
 
 // Storage keys
 const TASKS_STORAGE_KEY = 'task-viewer-tasks';
@@ -26,9 +28,7 @@ const Index = ({
 }: IndexProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const {
-    toast
-  } = useToast();
+  const { toast } = useToast();
 
   // Load tasks from localStorage on component mount
   useEffect(() => {
@@ -44,19 +44,24 @@ const Index = ({
   }, [tasks]);
 
   // Filter tasks by search term
-  const filteredTasks = tasks.filter(task => task.title.toLowerCase().includes(searchTerm.toLowerCase()) || task.description.toLowerCase().includes(searchTerm.toLowerCase()) || task.discipline.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredTasks = tasks.filter(task => 
+    task.title.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    task.description.toLowerCase().includes(searchTerm.toLowerCase()) || 
+    task.discipline.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   // Get tasks by status
   const pendingTasks = tasks.filter(task => task.status === "pendente");
   const inProgressTasks = tasks.filter(task => task.status === "em-andamento");
+  const completedTasks = tasks.filter(task => task.status === "concluída");
 
   // Calculate task statistics
   const totalTasks = tasks.length;
   const inProgressTasksCount = inProgressTasks.length;
-  const completedTasks = tasks.filter(task => task.status === "concluída").length;
+  const completedTasksCount = completedTasks.length;
   const pendingTasksCount = pendingTasks.length;
   const totalDisciplines = [...new Set(tasks.map(task => task.discipline))].length;
-  const completedPercentage = totalTasks > 0 ? Math.round(completedTasks / totalTasks * 100) : 0;
+  const completedPercentage = totalTasks > 0 ? Math.round(completedTasksCount / totalTasks * 100) : 0;
   const inProgressPercentage = totalTasks > 0 ? Math.round(inProgressTasksCount / totalTasks * 100) : 0;
 
   // Handle task creation
@@ -108,6 +113,7 @@ const Index = ({
       description: "A tarefa foi excluída com sucesso!"
     });
   };
+  
   const containerVariants = {
     hidden: {
       opacity: 0
@@ -120,6 +126,7 @@ const Index = ({
       }
     }
   };
+  
   const itemVariants = {
     hidden: {
       y: 20,
@@ -130,6 +137,7 @@ const Index = ({
       opacity: 1
     }
   };
+  
   return <Layout disciplines={disciplines} onAddDiscipline={onAddDiscipline} onEditDiscipline={onEditDiscipline} onDeleteDiscipline={onDeleteDiscipline} onSearch={setSearchTerm}>
       <motion.div className="flex items-center justify-between mb-8" initial={{
       opacity: 0,
@@ -149,14 +157,65 @@ const Index = ({
         </CreateTaskDialog>
       </motion.div>
       
-      <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" variants={containerVariants} initial="hidden" animate="visible">
+      <motion.div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8" variants={containerVariants} initial="hidden" animate="visible">
+        <motion.div variants={itemVariants}>
+          <StatusCard 
+            title="Tarefas Pendentes" 
+            value={pendingTasksCount} 
+            icon={<CircleIcon size={24} className="text-yellow-600" />} 
+            color="bg-clay-yellow" 
+            subtitle={`${Math.round(pendingTasksCount / Math.max(totalTasks, 1) * 100)}% do total`} 
+          />
+        </motion.div>
         
         <motion.div variants={itemVariants}>
-          <StatusCard title="Em Andamento" value={inProgressTasksCount} icon={<ClockIcon size={24} className="text-orange-600" />} color="bg-clay-orange" subtitle={`${inProgressPercentage}% do total`} />
+          <StatusCard 
+            title="Em Andamento" 
+            value={inProgressTasksCount} 
+            icon={<ClockIcon size={24} className="text-orange-600" />} 
+            color="bg-clay-orange" 
+            subtitle={`${inProgressPercentage}% do total`} 
+          />
         </motion.div>
+        
         <motion.div variants={itemVariants}>
-          <StatusCard title="Concluídas" value={completedTasks} icon={<CircleCheckIcon size={24} className="text-green-600" />} color="bg-clay-mint" subtitle={`${completedPercentage}% concluído`} />
+          <StatusCard 
+            title="Concluídas" 
+            value={completedTasksCount} 
+            icon={<CircleCheckIcon size={24} className="text-green-600" />} 
+            color="bg-clay-mint" 
+            subtitle={`${completedPercentage}% concluído`} 
+          />
         </motion.div>
+        
+        <motion.div variants={itemVariants}>
+          <StatusCard 
+            title="Disciplinas" 
+            value={totalDisciplines} 
+            icon={<BookOpenIcon size={24} className="text-blue-600" />} 
+            color="bg-clay-blue" 
+            subtitle="Total de disciplinas" 
+          />
+        </motion.div>
+      </motion.div>
+      
+      {/* Quick Links */}
+      <motion.div 
+        className="clay-card mb-8 bg-gradient-to-r from-primary/5 to-accent/5"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+      >
+        <div className="flex flex-wrap gap-4">
+          <Link to="/calendario" className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm hover:shadow-md transition-all">
+            <CalendarIcon size={20} className="text-primary" />
+            <span>Calendário</span>
+          </Link>
+          <Link to="/arquivos" className="flex items-center gap-2 px-4 py-2 bg-white rounded-xl shadow-sm hover:shadow-md transition-all">
+            <BookOpenIcon size={20} className="text-primary" />
+            <span>Arquivos</span>
+          </Link>
+        </div>
       </motion.div>
       
       {/* Task sections */}
@@ -213,44 +272,52 @@ const Index = ({
     }} transition={{
       delay: 0.3
     }}>
-        Suas Tarefas
+        Todas as Tarefas
       </motion.h2>
-      <motion.div className="space-y-4" variants={containerVariants} initial="hidden" animate="visible">
-        {filteredTasks.length > 0 ? filteredTasks.map((task, index) => <motion.div key={task.id} variants={itemVariants} initial="hidden" animate="visible" transition={{
-        delay: 0.1 * index
-      }} whileHover={{
-        scale: 1.01
-      }}>
+      <motion.div className="clay-card mb-8" variants={containerVariants} initial="hidden" animate="visible">
+        <div className="space-y-4">
+          {filteredTasks.length > 0 ? filteredTasks.map((task, index) => (
+            <motion.div key={task.id} variants={itemVariants} initial="hidden" animate="visible" transition={{
+              delay: 0.1 * index
+            }} whileHover={{
+              scale: 1.01
+            }}>
               <TaskCard task={task} onStatusChange={handleStatusChange} onEdit={handleEditTask} onDelete={handleDeleteTask} disciplines={disciplines} />
-            </motion.div>) : <motion.div className="clay-card flex flex-col items-center p-8" variants={itemVariants}>
-            <motion.div className="text-6xl mb-4" initial={{
-          scale: 0.8
-        }} animate={{
-          scale: 1
-        }} transition={{
-          duration: 0.5,
-          delay: 0.2,
-          type: "spring"
-        }}>
-              📝
             </motion.div>
-            <h3 className="text-xl font-medium mb-2">Sem tarefas no momento</h3>
-            <p className="text-muted-foreground text-center mb-6">
-              {searchTerm ? "Nenhuma tarefa corresponde à sua pesquisa." : "Parece que você não tem nenhuma tarefa ainda. Que tal criar uma nova?"}
-            </p>
-            {!searchTerm && <motion.div whileHover={{
-          scale: 1.05
-        }} whileTap={{
-          scale: 0.95
-        }}>
-                <CreateTaskDialog disciplines={disciplines} onCreateTask={handleCreateTask}>
-                  <Button className="clay-button bg-primary text-white flex items-center gap-2">
-                    <PlusIcon size={16} />
-                    <span>Nova Tarefa</span>
-                  </Button>
-                </CreateTaskDialog>
-              </motion.div>}
-          </motion.div>}
+          )) : (
+            <motion.div className="flex flex-col items-center p-8" variants={itemVariants}>
+              <motion.div className="text-6xl mb-4" initial={{
+                scale: 0.8
+              }} animate={{
+                scale: 1
+              }} transition={{
+                duration: 0.5,
+                delay: 0.2,
+                type: "spring"
+              }}>
+                📝
+              </motion.div>
+              <h3 className="text-xl font-medium mb-2">Sem tarefas no momento</h3>
+              <p className="text-muted-foreground text-center mb-6">
+                {searchTerm ? "Nenhuma tarefa corresponde à sua pesquisa." : "Parece que você não tem nenhuma tarefa ainda. Que tal criar uma nova?"}
+              </p>
+              {!searchTerm && (
+                <motion.div whileHover={{
+                  scale: 1.05
+                }} whileTap={{
+                  scale: 0.95
+                }}>
+                  <CreateTaskDialog disciplines={disciplines} onCreateTask={handleCreateTask}>
+                    <Button className="clay-button bg-primary text-white flex items-center gap-2">
+                      <PlusIcon size={16} />
+                      <span>Nova Tarefa</span>
+                    </Button>
+                  </CreateTaskDialog>
+                </motion.div>
+              )}
+            </motion.div>
+          )}
+        </div>
       </motion.div>
       
       <motion.h2 className="text-2xl font-bold mt-8 mb-4" initial={{
@@ -274,9 +341,6 @@ const Index = ({
       delay: 0.5
     }}>
         <DisciplineManager disciplines={disciplines} onAddDiscipline={onAddDiscipline} onEditDiscipline={onEditDiscipline} onDeleteDiscipline={onDeleteDiscipline} />
-        <div className="hidden">
-          <div id="add-discipline-trigger"></div>
-        </div>
       </motion.div>
     </Layout>;
 };
