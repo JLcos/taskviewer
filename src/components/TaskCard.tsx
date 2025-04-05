@@ -80,9 +80,7 @@ export function TaskCard({
               Marcar como Concluída
             </DropdownMenuItem>
             <DropdownMenuSeparator />
-            <DropdownMenuItem className="rounded-lg hover:bg-clay-blue cursor-pointer p-0">
-              <EditTaskDialog task={task} disciplines={disciplines} onUpdateTask={onEdit} />
-            </DropdownMenuItem>
+            <EditTaskDialog task={task} disciplines={disciplines} onUpdateTask={(updatedTask) => onEdit(task.id, updatedTask)} />
             <DropdownMenuItem className="rounded-lg hover:bg-clay-red cursor-pointer text-red-600" onClick={() => onDelete(task.id)}>
               Excluir Tarefa
             </DropdownMenuItem>

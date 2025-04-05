@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Layout } from "@/components/Layout";
 import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { TaskCard } from "@/components/TaskCard";
@@ -56,6 +56,36 @@ const Calendar = ({
     return `${day} de ${month}`;
   };
   
+  // Convert formatted date string "DD de month" back to Date object
+  const parseFormattedDate = (dateString: string): Date | null => {
+    const parts = dateString.split(' de ');
+    if (parts.length !== 2) return null;
+    
+    const day = parseInt(parts[0], 10);
+    const monthNames = [
+      "janeiro", "fevereiro", "março", "abril", "maio", "junho",
+      "julho", "agosto", "setembro", "outubro", "novembro", "dezembro"
+    ];
+    const monthIndex = monthNames.indexOf(parts[1]);
+    
+    if (isNaN(day) || monthIndex === -1) return null;
+    
+    const year = new Date().getFullYear();
+    return new Date(year, monthIndex, day);
+  };
+  
+  // Get all dates that have tasks
+  const datesWithTasks = useMemo(() => {
+    const dates: Date[] = [];
+    tasks.forEach(task => {
+      const date = parseFormattedDate(task.dueDate);
+      if (date && !dates.some(d => d.getDate() === date.getDate() && d.getMonth() === date.getMonth())) {
+        dates.push(date);
+      }
+    });
+    return dates;
+  }, [tasks]);
+  
   // Filter tasks by both date and search term
   const filteredTasks = tasks.filter(task => {
     const matchesSearch = searchTerm === "" || 
@@ -63,11 +93,7 @@ const Calendar = ({
       task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
       task.discipline.toLowerCase().includes(searchTerm.toLowerCase());
     
-    // Filter by selected date
-    const selectedDateFormatted = formatSelectedDate(date);
-    const matchesDate = selectedDateFormatted === "" || task.dueDate === selectedDateFormatted;
-    
-    return matchesSearch && matchesDate;
+    return matchesSearch;
   });
   
   // Handle task creation
@@ -198,6 +224,7 @@ const Calendar = ({
               mode="single"
               selected={date}
               onSelect={setDate}
+              datesWithTasks={datesWithTasks}
               className="bg-white rounded-xl p-3 pointer-events-auto"
               classNames={{
                 day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",

@@ -6,18 +6,32 @@ import { DayPicker } from "react-day-picker";
 import { cn } from "@/lib/utils";
 import { buttonVariants } from "@/components/ui/button";
 
-export type CalendarProps = React.ComponentProps<typeof DayPicker>;
+export type CalendarProps = React.ComponentProps<typeof DayPicker> & {
+  datesWithTasks?: Date[];
+};
 
 function Calendar({
   className,
   classNames,
   showOutsideDays = true,
+  datesWithTasks = [],
   ...props
 }: CalendarProps) {
+  // Custom modifiers to highlight days with tasks
+  const modifiers = {
+    withTasks: datesWithTasks,
+  };
+
+  const modifiersClassNames = {
+    withTasks: "border-2 border-primary font-bold bg-primary/10 text-primary",
+  };
+
   return (
     <DayPicker
       showOutsideDays={showOutsideDays}
       className={cn("p-3 pointer-events-auto", className)}
+      modifiers={modifiers}
+      modifiersClassNames={modifiersClassNames}
       classNames={{
         months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
         month: "space-y-4",
