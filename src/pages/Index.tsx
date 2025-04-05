@@ -150,9 +150,7 @@ const Index = ({
       </motion.div>
       
       <motion.div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8" variants={containerVariants} initial="hidden" animate="visible">
-        <motion.div variants={itemVariants}>
-          <StatusCard title="Total de Tarefas" value={totalTasks} icon={<CircleIcon size={24} className="text-blue-600" />} color="bg-clay-blue" subtitle={`Em ${totalDisciplines} disciplinas`} />
-        </motion.div>
+        
         <motion.div variants={itemVariants}>
           <StatusCard title="Em Andamento" value={inProgressTasksCount} icon={<ClockIcon size={24} className="text-orange-600" />} color="bg-clay-orange" subtitle={`${inProgressPercentage}% do total`} />
         </motion.div>
@@ -162,7 +160,7 @@ const Index = ({
       </motion.div>
       
       {/* Task sections */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
         {/* Pending Tasks */}
         <motion.div className="clay-card" initial={{
         opacity: 0,
@@ -185,7 +183,25 @@ const Index = ({
         </motion.div>
         
         {/* In Progress Tasks */}
-        
+        <motion.div className="clay-card" initial={{
+        opacity: 0,
+        y: 20
+      }} animate={{
+        opacity: 1,
+        y: 0
+      }} transition={{
+        delay: 0.3
+      }}>
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold">Em Andamento ({inProgressTasksCount})</h2>
+          </div>
+          
+          <div className="space-y-4 max-h-80 overflow-y-auto pr-2">
+            {inProgressTasks.length > 0 ? inProgressTasks.map(task => <TaskCard key={task.id} task={task} onStatusChange={handleStatusChange} onEdit={handleEditTask} onDelete={handleDeleteTask} disciplines={disciplines} />) : <div className="text-center p-4 bg-gray-50 rounded-lg">
+                <p className="text-muted-foreground">Não há tarefas em andamento</p>
+              </div>}
+          </div>
+        </motion.div>
       </div>
       
       <motion.h2 className="text-2xl font-bold mb-4" initial={{
