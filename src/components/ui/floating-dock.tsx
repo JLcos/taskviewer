@@ -1,6 +1,6 @@
 
 import { cn } from "@/lib/utils";
-import { LayoutNavbarIcon } from "lucide-react";
+import { MenuIcon } from "lucide-react";
 import {
   AnimatePresence,
   MotionValue,
@@ -87,7 +87,7 @@ const FloatingDockMobile = ({
         onClick={() => setOpen(!open)}
         className="h-10 w-10 rounded-full bg-gray-50 dark:bg-neutral-800 flex items-center justify-center"
       >
-        <LayoutNavbarIcon className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
+        <MenuIcon className="h-5 w-5 text-neutral-500 dark:text-neutral-400" />
       </button>
     </div>
   );
