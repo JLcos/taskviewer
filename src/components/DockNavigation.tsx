@@ -63,16 +63,17 @@ export function DockNavigation({ onAddDiscipline }: DockNavigationProps) {
   ];
 
   return (
-    <motion.div 
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.5 }}
-      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 mx-auto"
-    >
-      <FloatingDock
-        items={links}
-        mobileClassName="translate-y-0"
-      />
-    </motion.div>
+    <div className="fixed bottom-0 left-0 right-0 flex justify-center items-center pb-4 z-50">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        <FloatingDock
+          items={links}
+          mobileClassName="translate-y-0"
+        />
+      </motion.div>
+    </div>
   );
 }
