@@ -97,8 +97,8 @@ export function Layout({
       {/* Add Discipline Dialog */}
       <AddDisciplineDialog
         onAddDiscipline={handleAddDisciplineSubmit}
-        open={showDisciplineDialog}
         onOpenChange={setShowDisciplineDialog}
+        open={showDisciplineDialog}
       />
     </div>
   );

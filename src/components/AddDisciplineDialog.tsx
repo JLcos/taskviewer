@@ -9,9 +9,11 @@ import { useToast } from "@/hooks/use-toast";
 interface AddDisciplineDialogProps {
   onAddDiscipline: (name: string) => void;
   trigger?: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function AddDisciplineDialog({ onAddDiscipline, trigger }: AddDisciplineDialogProps) {
+export function AddDisciplineDialog({ onAddDiscipline, trigger, open, onOpenChange }: AddDisciplineDialogProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [disciplineName, setDisciplineName] = useState("");
   const { toast } = useToast();
@@ -30,7 +32,13 @@ export function AddDisciplineDialog({ onAddDiscipline, trigger }: AddDisciplineD
     
     onAddDiscipline(disciplineName);
     setDisciplineName("");
-    setIsOpen(false);
+    
+    // If controlled externally, use onOpenChange
+    if (onOpenChange) {
+      onOpenChange(false);
+    } else {
+      setIsOpen(false);
+    }
     
     toast({
       title: "Disciplina adicionada",
@@ -38,8 +46,12 @@ export function AddDisciplineDialog({ onAddDiscipline, trigger }: AddDisciplineD
     });
   };
 
+  // Use either controlled or uncontrolled state
+  const dialogOpen = open !== undefined ? open : isOpen;
+  const setDialogOpen = onOpenChange || setIsOpen;
+
   return (
-    <Dialog open={isOpen} onOpenChange={setIsOpen}>
+    <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
       <DialogTrigger asChild>
         {trigger || (
           <Button className="clay-button bg-primary text-primary-foreground">
@@ -71,7 +83,7 @@ export function AddDisciplineDialog({ onAddDiscipline, trigger }: AddDisciplineD
               type="button"
               variant="outline" 
               className="clay-button bg-secondary"
-              onClick={() => setIsOpen(false)}
+              onClick={() => setDialogOpen(false)}
             >
               Cancelar
             </Button>

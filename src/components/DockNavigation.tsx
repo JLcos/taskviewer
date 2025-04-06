@@ -57,21 +57,10 @@ export function DockNavigation({ onAddDiscipline }: DockNavigationProps) {
       icon: (
         <PlusIcon className="h-full w-full text-neutral-500 dark:text-neutral-300" />
       ),
-      href: "#add",
+      href: "#",
+      onClick: onAddDiscipline
     },
   ];
-
-  // Modify the last item to handle the add discipline action
-  const processedLinks = links.map(link => {
-    if (link.title === "Adicionar Disciplina") {
-      return {
-        ...link,
-        href: "#",
-        onClick: onAddDiscipline
-      };
-    }
-    return link;
-  });
 
   return (
     <motion.div 
@@ -81,7 +70,7 @@ export function DockNavigation({ onAddDiscipline }: DockNavigationProps) {
       className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50"
     >
       <FloatingDock
-        items={processedLinks as any}
+        items={links}
         mobileClassName="translate-y-0"
       />
     </motion.div>
