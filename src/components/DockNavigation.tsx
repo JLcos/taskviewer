@@ -67,7 +67,7 @@ export function DockNavigation({ onAddDiscipline }: DockNavigationProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
-      className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50"
+      className="fixed bottom-4 left-1/2 -translate-x-1/2 z-50 mx-auto"
     >
       <FloatingDock
         items={links}
