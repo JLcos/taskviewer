@@ -191,79 +191,104 @@ const Calendar = ({
       onSearch={setSearchTerm}
       searchPlaceholder="Pesquisar tarefas no calendário..."
     >
-      <div className="flex items-center justify-between mb-8">
-        <h1 className="text-3xl font-bold text-primary">
-          Calendário
-          <CalendarIcon className="inline-block ml-2 mb-1" size={24} />
-        </h1>
-        <CreateTaskDialog 
-          disciplines={disciplines}
-          onCreateTask={handleCreateTask}
+      <div className="flex items-center justify-between mb-10">
+        <motion.div 
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6 }}
+          className="flex items-center gap-4"
         >
-          <Button className="clay-button bg-primary text-white flex items-center gap-2">
-            <PlusIcon size={16} />
-            <span className={isMobile ? "hidden" : "inline"}>Nova Tarefa</span>
-          </Button>
-        </CreateTaskDialog>
+          <div className="p-3 bg-gradient-to-br from-primary/20 to-accent/20 rounded-2xl shadow-clay">
+            <CalendarIcon className="text-primary" size={32} />
+          </div>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+              Calendário
+            </h1>
+            <p className="text-muted-foreground text-lg mt-1">
+              Organize suas tarefas por data
+            </p>
+          </div>
+        </motion.div>
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ duration: 0.6, delay: 0.1 }}
+        >
+          <CreateTaskDialog 
+            disciplines={disciplines}
+            onCreateTask={handleCreateTask}
+          >
+            <Button className="clay-button bg-gradient-to-r from-primary to-accent text-primary-foreground flex items-center gap-3 px-6 py-3 text-lg font-semibold hover:shadow-clay-hover transition-all duration-200">
+              <PlusIcon size={20} />
+              <span className={isMobile ? "hidden" : "inline"}>Nova Tarefa</span>
+            </Button>
+          </CreateTaskDialog>
+        </motion.div>
       </div>
       
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
         <div className={isMobile ? "col-span-1" : "lg:col-span-4"}>
           <motion.div 
-            className="clay-card rounded-xl shadow-lg overflow-hidden"
+            className="clay-card overflow-hidden backdrop-blur-sm"
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="p-4 bg-primary/10 border-b">
-              <h3 className="text-lg font-semibold text-primary">Data Selecionada</h3>
-              <p className="text-sm text-muted-foreground">
+            <div className="p-6 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10 border-b border-border/50">
+              <h3 className="text-xl font-bold text-primary mb-2">Data Selecionada</h3>
+              <p className="text-muted-foreground font-medium">
                 {date?.toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}
               </p>
             </div>
-            <CalendarComponent
-              mode="single"
-              selected={date}
-              onSelect={setDate}
-              datesWithTasks={datesWithTasks}
-              className="bg-white rounded-xl p-3 pointer-events-auto"
-              classNames={{
-                day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground",
-                day_today: "border border-primary text-primary font-bold",
-                day: "hover:bg-muted transition-colors"
-              }}
-            />
+            <div className="p-2">
+              <CalendarComponent
+                mode="single"
+                selected={date}
+                onSelect={setDate}
+                datesWithTasks={datesWithTasks}
+                className="rounded-xl p-4 pointer-events-auto"
+                classNames={{
+                  day_selected: "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground shadow-clay-pressed",
+                  day_today: "bg-accent text-accent-foreground font-bold shadow-clay-inner",
+                  day: "hover:bg-secondary/50 transition-all duration-200 hover:shadow-clay-inner rounded-lg"
+                }}
+              />
+            </div>
           </motion.div>
           
           <motion.div 
-            className="clay-card mt-6 bg-gradient-to-r from-accent/20 to-primary/20 rounded-xl shadow-lg"
+            className="clay-card mt-8 overflow-hidden bg-gradient-to-br from-card via-accent/5 to-primary/5"
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.2, duration: 0.5 }}
           >
-            <div className="p-4 border-b bg-white/50">
-              <h3 className="text-lg font-semibold text-primary">Resumo do Dia</h3>
+            <div className="p-6 border-b border-border/30">
+              <h3 className="text-xl font-bold text-primary flex items-center gap-2">
+                Resumo do Dia
+                <div className="h-2 w-2 bg-primary rounded-full animate-pulse-gentle"></div>
+              </h3>
             </div>
-            <div className="p-4 space-y-3">
-              <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
-                <span className="font-medium">Total de tarefas:</span>
-                <span className="font-bold text-lg bg-primary/20 px-3 py-1 rounded-full">{todaysTasks.length}</span>
+            <div className="p-6 space-y-4">
+              <div className="flex justify-between items-center p-4 bg-card/80 backdrop-blur-sm rounded-xl border border-border/20 shadow-clay-inner">
+                <span className="font-semibold text-foreground">Total de tarefas</span>
+                <span className="font-bold text-xl bg-primary/20 text-primary px-4 py-2 rounded-full shadow-clay-inner">{todaysTasks.length}</span>
               </div>
-              <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
-                <span className="font-medium">Pendentes:</span>
-                <span className="font-bold text-lg bg-yellow-100 text-yellow-700 px-3 py-1 rounded-full">
+              <div className="flex justify-between items-center p-4 bg-card/80 backdrop-blur-sm rounded-xl border border-border/20 shadow-clay-inner">
+                <span className="font-semibold text-foreground">Pendentes</span>
+                <span className="font-bold text-xl bg-clay-yellow text-foreground px-4 py-2 rounded-full shadow-clay-inner">
                   {pendingTasksCount}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
-                <span className="font-medium">Em andamento:</span>
-                <span className="font-bold text-lg bg-orange-100 text-orange-700 px-3 py-1 rounded-full">
+              <div className="flex justify-between items-center p-4 bg-card/80 backdrop-blur-sm rounded-xl border border-border/20 shadow-clay-inner">
+                <span className="font-semibold text-foreground">Em andamento</span>
+                <span className="font-bold text-xl bg-clay-orange text-foreground px-4 py-2 rounded-full shadow-clay-inner">
                   {inProgressTasksCount}
                 </span>
               </div>
-              <div className="flex justify-between items-center p-2 bg-white/80 rounded-lg">
-                <span className="font-medium">Concluídas:</span>
-                <span className="font-bold text-lg bg-green-100 text-green-700 px-3 py-1 rounded-full">
+              <div className="flex justify-between items-center p-4 bg-card/80 backdrop-blur-sm rounded-xl border border-border/20 shadow-clay-inner">
+                <span className="font-semibold text-foreground">Concluídas</span>
+                <span className="font-bold text-xl bg-clay-mint text-foreground px-4 py-2 rounded-full shadow-clay-inner">
                   {completedTasksCount}
                 </span>
               </div>
@@ -273,25 +298,35 @@ const Calendar = ({
         
         <div className={isMobile ? "col-span-1" : "lg:col-span-8"}>
           <motion.div 
-            className="clay-card h-full bg-gradient-to-br from-white to-gray-50 rounded-xl shadow-lg"
+            className="clay-card h-full bg-gradient-to-br from-card via-accent/5 to-primary/5 overflow-hidden"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5 }}
           >
-            <div className="p-4 border-b bg-primary/5">
-              <h2 className="text-xl font-bold text-primary">
+            <div className="p-6 border-b border-border/30 bg-gradient-to-r from-primary/10 via-accent/5 to-primary/10">
+              <h2 className="text-2xl font-bold text-primary flex items-center gap-3">
+                <CalendarIcon className="text-primary" size={28} />
                 Tarefas para {date?.toLocaleDateString('pt-BR', { day: 'numeric', month: 'long' })}
               </h2>
+              <p className="text-muted-foreground mt-2">
+                Gerencie suas atividades do dia selecionado
+              </p>
             </div>
             
-            <div className="p-4 space-y-4 max-h-[calc(100vh-20rem)] overflow-y-auto">
+            <div className="p-6 space-y-6 max-h-[calc(100vh-20rem)] overflow-y-auto scrollbar-thin scrollbar-thumb-primary/20 scrollbar-track-transparent">
               {todaysTasks.length > 0 ? (
                 todaysTasks.map((task, index) => (
                   <motion.div
                     key={task.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: index * 0.1 }}
+                    transition={{ 
+                      delay: index * 0.1,
+                      type: "spring",
+                      stiffness: 300,
+                      damping: 24
+                    }}
+                    className="transform hover:scale-[1.02] transition-transform duration-200"
                   >
                     <TaskCard
                       task={task}
@@ -304,17 +339,21 @@ const Calendar = ({
                 ))
               ) : (
                 <motion.div 
-                  className="text-center py-16 bg-white/50 rounded-xl"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  transition={{ delay: 0.3 }}
+                  className="text-center py-20 bg-gradient-to-br from-card/50 to-accent/10 rounded-2xl border border-border/20 backdrop-blur-sm"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.3, duration: 0.5 }}
                 >
-                  <p className="text-muted-foreground text-lg mb-2">
-                    {searchTerm ? "Nenhuma tarefa corresponde à sua pesquisa." : "Nenhuma tarefa para este dia."}
+                  <div className="mb-6 inline-flex items-center justify-center w-16 h-16 bg-primary/10 rounded-full">
+                    <CalendarIcon className="text-primary" size={32} />
+                  </div>
+                  <p className="text-foreground text-xl font-semibold mb-3">
+                    {searchTerm ? "Nenhuma tarefa encontrada" : "Nenhuma tarefa para este dia"}
                   </p>
-                  <p className="text-muted-foreground">
-                    Use o botão "Nova Tarefa" para adicionar uma atividade.
+                  <p className="text-muted-foreground text-lg mb-6">
+                    {searchTerm ? "Tente ajustar os filtros de pesquisa." : "Que tal adicionar uma nova atividade?"}
                   </p>
+                  <div className="w-24 h-1 bg-gradient-to-r from-primary to-accent rounded-full mx-auto"></div>
                 </motion.div>
               )}
             </div>
