@@ -10,43 +10,75 @@ import Files from "./pages/Files";
 import Analytics from "./pages/Analytics";
 import NotFound from "./pages/NotFound";
 import { useState, useEffect } from "react";
+import * as DisciplineService from "@/services/DisciplineService";
 
 const queryClient = new QueryClient();
 
-// Storage key for disciplines
-const DISCIPLINES_STORAGE_KEY = 'task-viewer-disciplines';
-
 const App = () => {
   // Global state for disciplines that can be shared across pages
-  const [globalDisciplines, setGlobalDisciplines] = useState([
-    "Matemática", "Português", "Física", "Química", "História"
-  ]);
+  const [globalDisciplines, setGlobalDisciplines] = useState<string[]>([]);
   
-  // Load disciplines from localStorage on app start
+  // Load disciplines from Supabase on app start
   useEffect(() => {
-    const savedDisciplines = localStorage.getItem(DISCIPLINES_STORAGE_KEY);
-    if (savedDisciplines) {
-      setGlobalDisciplines(JSON.parse(savedDisciplines));
-    }
+    const loadDisciplines = async () => {
+      try {
+        const disciplines = await DisciplineService.getDisciplines();
+        if (disciplines.length === 0) {
+          // Initialize with default disciplines if none exist
+          const defaultDisciplines = ["Matemática", "Português", "Física", "Química", "História"];
+          for (const discipline of defaultDisciplines) {
+            await DisciplineService.addDiscipline(discipline);
+          }
+          setGlobalDisciplines(defaultDisciplines);
+        } else {
+          setGlobalDisciplines(disciplines);
+        }
+      } catch (error) {
+        console.error('Error loading disciplines:', error);
+        // Fallback to default disciplines if error
+        setGlobalDisciplines(["Matemática", "Português", "Física", "Química", "História"]);
+      }
+    };
+
+    loadDisciplines();
+
+    // Subscribe to real-time updates
+    const unsubscribe = DisciplineService.subscribeToDisciplines(() => {
+      loadDisciplines();
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
   
-  // Save disciplines to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem(DISCIPLINES_STORAGE_KEY, JSON.stringify(globalDisciplines));
-  }, [globalDisciplines]);
-  
-  const handleAddDiscipline = (name: string) => {
+  const handleAddDiscipline = async (name: string) => {
     if (!globalDisciplines.includes(name)) {
-      setGlobalDisciplines([...globalDisciplines, name]);
+      try {
+        await DisciplineService.addDiscipline(name);
+        // The real-time subscription will update the state automatically
+      } catch (error) {
+        console.error('Error adding discipline:', error);
+      }
     }
   };
 
-  const handleEditDiscipline = (oldName: string, newName: string) => {
-    setGlobalDisciplines(globalDisciplines.map(d => d === oldName ? newName : d));
+  const handleEditDiscipline = async (oldName: string, newName: string) => {
+    try {
+      await DisciplineService.updateDiscipline(oldName, newName);
+      // The real-time subscription will update the state automatically
+    } catch (error) {
+      console.error('Error editing discipline:', error);
+    }
   };
 
-  const handleDeleteDiscipline = (name: string) => {
-    setGlobalDisciplines(globalDisciplines.filter(d => d !== name));
+  const handleDeleteDiscipline = async (name: string) => {
+    try {
+      await DisciplineService.deleteDiscipline(name);
+      // The real-time subscription will update the state automatically
+    } catch (error) {
+      console.error('Error deleting discipline:', error);
+    }
   };
 
   const disciplineProps = {

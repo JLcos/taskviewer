@@ -31,22 +31,21 @@ const Calendar = ({
   
   // Load tasks and register for real-time updates
   useEffect(() => {
-    const loadTasks = () => {
-      setTasks(TaskService.getTasks());
+    const loadTasks = async () => {
+      const tasksData = await TaskService.getTasks();
+      setTasks(tasksData);
     };
     
     // Initial load
     loadTasks();
     
-    // Register for updates
-    const cleanup = TaskService.registerForUpdates(loadTasks);
-    
-    // Listen for local storage changes in the same tab
-    window.addEventListener('local-storage-updated', loadTasks);
+    // Subscribe to real-time updates
+    const unsubscribe = TaskService.subscribeToTasks(() => {
+      loadTasks();
+    });
     
     return () => {
-      cleanup();
-      window.removeEventListener('local-storage-updated', loadTasks);
+      unsubscribe();
     };
   }, []);
   
@@ -105,48 +104,80 @@ const Calendar = ({
   });
   
   // Handle task creation
-  const handleCreateTask = (newTask: any) => {
-    const taskToAdd = TaskService.addTask({
-      title: newTask.title,
-      description: newTask.description,
-      discipline: newTask.discipline,
-      dueDate: formatDate(newTask.dueDate),
-    });
-    
-    toast({
-      title: "Tarefa criada",
-      description: "A tarefa foi criada com sucesso!"
-    });
+  const handleCreateTask = async (newTask: any) => {
+    try {
+      await TaskService.addTask({
+        title: newTask.title,
+        description: newTask.description,
+        discipline: newTask.discipline,
+        dueDate: formatDate(newTask.dueDate),
+      });
+      
+      toast({
+        title: "Tarefa criada",
+        description: "A tarefa foi criada com sucesso!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao criar a tarefa. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Handle task status change
-  const handleStatusChange = (id: string, newStatus: TaskStatus) => {
-    TaskService.changeTaskStatus(id, newStatus);
-    
-    toast({
-      title: "Status atualizado",
-      description: "O status da tarefa foi atualizado com sucesso!"
-    });
+  const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
+    try {
+      await TaskService.changeTaskStatus(id, newStatus);
+      
+      toast({
+        title: "Status atualizado",
+        description: "O status da tarefa foi atualizado com sucesso!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar o status. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Handle task edit
-  const handleEditTask = (id: string, updatedTask: Partial<Task>) => {
-    TaskService.updateTask(id, updatedTask);
-    
-    toast({
-      title: "Tarefa atualizada",
-      description: "A tarefa foi atualizada com sucesso!"
-    });
+  const handleEditTask = async (id: string, updatedTask: Partial<Task>) => {
+    try {
+      await TaskService.updateTask(id, updatedTask);
+      
+      toast({
+        title: "Tarefa atualizada",
+        description: "A tarefa foi atualizada com sucesso!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao atualizar a tarefa. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Handle task deletion
-  const handleDeleteTask = (id: string) => {
-    TaskService.deleteTask(id);
-    
-    toast({
-      title: "Tarefa excluída",
-      description: "A tarefa foi excluída com sucesso!"
-    });
+  const handleDeleteTask = async (id: string) => {
+    try {
+      await TaskService.deleteTask(id);
+      
+      toast({
+        title: "Tarefa excluída",
+        description: "A tarefa foi excluída com sucesso!"
+      });
+    } catch (error) {
+      toast({
+        title: "Erro",
+        description: "Erro ao excluir a tarefa. Tente novamente.",
+        variant: "destructive"
+      });
+    }
   };
   
   // Format date from YYYY-MM-DD to "DD de Month"
