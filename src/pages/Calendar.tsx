@@ -110,7 +110,7 @@ const Calendar = ({
         title: newTask.title,
         description: newTask.description,
         discipline: newTask.discipline,
-        dueDate: formatDate(newTask.dueDate),
+        dueDate: newTask.dueDate,
       });
       
       toast({
@@ -208,7 +208,7 @@ const Calendar = ({
 
   // Get tasks for selected date
   const selectedDateFormatted = formatSelectedDate(date);
-  const todaysTasks = tasks.filter(task => task.dueDate === selectedDateFormatted);
+  const todaysTasks = tasks.filter(task => formatSelectedDate(parseFormattedDate(task.dueDate) || undefined) === selectedDateFormatted);
   const pendingTasksCount = todaysTasks.filter(t => t.status === "pendente").length;
   const inProgressTasksCount = todaysTasks.filter(t => t.status === "em-andamento").length;
   const completedTasksCount = todaysTasks.filter(t => t.status === "concluída").length;
