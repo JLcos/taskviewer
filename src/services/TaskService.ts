@@ -46,11 +46,12 @@ const mapUiToDbStatus = (s: TaskStatus): DbStatus => {
   if (s === 'concluída') return 'concluida';
   return 'pendente';
 };
-export const getTasks = async (): Promise<Task[]> => {
+export const getTasks = async (userId: string): Promise<Task[]> => {
   try {
     const { data, error } = await supabase
       .from('tasks')
       .select('*')
+      .eq('user_id', userId)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -73,7 +74,7 @@ export const getTasks = async (): Promise<Task[]> => {
 };
 
 // Add a new task
-export const addTask = async (newTask: Omit<Task, 'id' | 'status'>) => {
+export const addTask = async (newTask: Omit<Task, 'id' | 'status'>, userId: string) => {
   try {
     const { data, error } = await supabase
       .from('tasks')
@@ -82,7 +83,8 @@ export const addTask = async (newTask: Omit<Task, 'id' | 'status'>) => {
         description: newTask.description,
         discipline: newTask.discipline,
         status: 'pendente',
-        due_date: toISODate(newTask.dueDate)
+        due_date: toISODate(newTask.dueDate),
+        user_id: userId
       }])
       .select()
       .single();

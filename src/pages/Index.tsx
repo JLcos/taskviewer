@@ -11,7 +11,8 @@ import { DisciplineManager } from "@/components/DisciplineManager";
 import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
-import * as TaskService from "@/services/TaskService";
+import { getTasks, addTask, updateTask, deleteTask, changeTaskStatus, subscribeToTasks } from "@/services/TaskService";
+import { supabase } from "@/integrations/supabase/client";
 interface IndexProps {
   disciplines: string[];
   onAddDiscipline: (name: string) => void;
@@ -26,30 +27,41 @@ const Index = ({
 }: IndexProps) => {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
-  const {
-    toast
-  } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
   const isMobile = useIsMobile();
 
-  // Load tasks and register for real-time updates
+  // Load tasks on component mount
   useEffect(() => {
     const loadTasks = async () => {
-      const tasksData = await TaskService.getTasks();
-      setTasks(tasksData);
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      try {
+        const data = await getTasks(user.id);
+        setTasks(data);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error loading tasks:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as tarefas",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+      }
     };
 
-    // Initial load
     loadTasks();
 
-    // Subscribe to real-time updates
-    const unsubscribe = TaskService.subscribeToTasks(() => {
-      loadTasks();
+    // Subscribe to real-time changes
+    const unsubscribe = subscribeToTasks(() => {
+      loadTasks(); // Reload tasks when changes occur
     });
 
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+    return unsubscribe;
+  }, [toast]);
 
   // Filter tasks by search term
   const filteredTasks = tasks.filter(task => task.title.toLowerCase().includes(searchTerm.toLowerCase()) || task.description.toLowerCase().includes(searchTerm.toLowerCase()) || task.discipline.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -70,17 +82,23 @@ const Index = ({
 
   // Handle task creation
   const handleCreateTask = async (newTask: Omit<Task, 'id' | 'status'>) => {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     try {
-      await TaskService.addTask(newTask);
+      await addTask(newTask, user.id);
       toast({
         title: "Tarefa criada",
-        description: "A tarefa foi criada com sucesso!"
+        description: "Sua tarefa foi criada com sucesso",
       });
+      // Real-time subscription will handle the update
     } catch (error) {
+      console.error('Error adding task:', error);
       toast({
         title: "Erro",
-        description: "Erro ao criar a tarefa. Tente novamente.",
-        variant: "destructive"
+        description: "Não foi possível criar a tarefa",
+        variant: "destructive",
       });
     }
   };
@@ -88,7 +106,7 @@ const Index = ({
   // Handle task status change
   const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
     try {
-      await TaskService.changeTaskStatus(id, newStatus);
+      await changeTaskStatus(id, newStatus);
       toast({
         title: "Status atualizado",
         description: "O status da tarefa foi atualizado com sucesso!"
@@ -105,7 +123,7 @@ const Index = ({
   // Handle task edit
   const handleEditTask = async (id: string, updatedTask: Partial<Task>) => {
     try {
-      await TaskService.updateTask(id, updatedTask);
+      await updateTask(id, updatedTask);
       toast({
         title: "Tarefa atualizada",
         description: "A tarefa foi atualizada com sucesso!"
@@ -122,7 +140,7 @@ const Index = ({
   // Handle task deletion
   const handleDeleteTask = async (id: string) => {
     try {
-      await TaskService.deleteTask(id);
+      await deleteTask(id);
       toast({
         title: "Tarefa excluída",
         description: "A tarefa foi excluída com sucesso!"

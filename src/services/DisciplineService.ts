@@ -6,11 +6,12 @@ export interface Discipline {
 }
 
 // Get all disciplines
-export const getDisciplines = async (): Promise<string[]> => {
+export const getDisciplines = async (userId: string): Promise<string[]> => {
   try {
     const { data, error } = await supabase
       .from('disciplines')
       .select('name')
+      .eq('user_id', userId)
       .order('name', { ascending: true });
 
     if (error) {
@@ -26,11 +27,11 @@ export const getDisciplines = async (): Promise<string[]> => {
 };
 
 // Add a new discipline
-export const addDiscipline = async (name: string) => {
+export const addDiscipline = async (name: string, userId: string) => {
   try {
     const { error } = await supabase
       .from('disciplines')
-      .insert([{ name }]);
+      .insert([{ name, user_id: userId }]);
 
     if (error) {
       console.error('Error adding discipline:', error);

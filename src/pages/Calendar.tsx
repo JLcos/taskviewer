@@ -10,7 +10,8 @@ import { motion } from "framer-motion";
 import { CalendarIcon, PlusIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-import * as TaskService from "@/services/TaskService";
+import { getTasks, addTask, updateTask, deleteTask, changeTaskStatus, subscribeToTasks } from "@/services/TaskService";
+import { supabase } from "@/integrations/supabase/client";
 
 const Calendar = ({ 
   disciplines,
@@ -26,28 +27,41 @@ const Calendar = ({
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [tasks, setTasks] = useState<Task[]>([]);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const isMobile = useIsMobile();
   
-  // Load tasks and register for real-time updates
+  // Load tasks on component mount
   useEffect(() => {
     const loadTasks = async () => {
-      const tasksData = await TaskService.getTasks();
-      setTasks(tasksData);
+      // Get current user
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      try {
+        const data = await getTasks(user.id);
+        setTasks(data);
+        setIsLoading(false);
+      } catch (error) {
+        console.error('Error loading tasks:', error);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar as tarefas",
+          variant: "destructive",
+        });
+        setIsLoading(false);
+      }
     };
-    
-    // Initial load
+
     loadTasks();
-    
-    // Subscribe to real-time updates
-    const unsubscribe = TaskService.subscribeToTasks(() => {
-      loadTasks();
+
+    // Subscribe to real-time changes
+    const unsubscribe = subscribeToTasks(() => {
+      loadTasks(); // Reload tasks when changes occur
     });
-    
-    return () => {
-      unsubscribe();
-    };
-  }, []);
+
+    return unsubscribe;
+  }, [toast]);
   
   // Format the selected date to match the task dueDate format
   const formatSelectedDate = (date: Date | undefined): string => {
@@ -105,13 +119,17 @@ const Calendar = ({
   
   // Handle task creation
   const handleCreateTask = async (newTask: any) => {
+    // Get current user
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
     try {
-      await TaskService.addTask({
+      await addTask({
         title: newTask.title,
         description: newTask.description,
         discipline: newTask.discipline,
         dueDate: newTask.dueDate,
-      });
+      }, user.id);
       
       toast({
         title: "Tarefa criada",
@@ -129,7 +147,7 @@ const Calendar = ({
   // Handle task status change
   const handleStatusChange = async (id: string, newStatus: TaskStatus) => {
     try {
-      await TaskService.changeTaskStatus(id, newStatus);
+      await changeTaskStatus(id, newStatus);
       
       toast({
         title: "Status atualizado",
@@ -147,7 +165,7 @@ const Calendar = ({
   // Handle task edit
   const handleEditTask = async (id: string, updatedTask: Partial<Task>) => {
     try {
-      await TaskService.updateTask(id, updatedTask);
+      await updateTask(id, updatedTask);
       
       toast({
         title: "Tarefa atualizada",
@@ -165,7 +183,7 @@ const Calendar = ({
   // Handle task deletion
   const handleDeleteTask = async (id: string) => {
     try {
-      await TaskService.deleteTask(id);
+      await deleteTask(id);
       
       toast({
         title: "Tarefa excluída",

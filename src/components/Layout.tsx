@@ -1,11 +1,12 @@
-
 import { ReactNode, useState } from "react";
 import { SearchBar } from "@/components/SearchBar";
 import { motion, AnimatePresence } from "framer-motion";
-import { MenuIcon, XIcon } from "lucide-react";
+import { MenuIcon, XIcon, LogOutIcon } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DockNavigation } from "@/components/DockNavigation";
 import { AddDisciplineDialog } from "@/components/AddDisciplineDialog";
+import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
 
 interface LayoutProps {
   children: ReactNode;
@@ -27,6 +28,7 @@ export function Layout({
   searchPlaceholder = "Pesquisar tarefas, arquivos ou anotações..." 
 }: LayoutProps) {
   const [showDisciplineDialog, setShowDisciplineDialog] = useState(false);
+  const { signOut } = useAuth();
   const isMobile = useIsMobile();
   
   const handleSearch = (term: string) => {
@@ -76,6 +78,16 @@ export function Layout({
             <div className="h-10"></div> 
           )}
         </div>
+        
+        <Button
+          onClick={signOut}
+          variant="outline"
+          size="sm"
+          className="flex items-center gap-2"
+        >
+          <LogOutIcon size={16} />
+          <span className="hidden sm:inline">Sair</span>
+        </Button>
       </motion.header>
       
       <AnimatePresence mode="wait">
