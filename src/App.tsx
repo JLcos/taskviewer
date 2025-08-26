@@ -8,27 +8,22 @@ import Index from "./pages/Index";
 import Calendar from "./pages/Calendar";
 import Files from "./pages/Files";
 import Analytics from "./pages/Analytics";
-import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import { getDisciplines, addDiscipline, updateDiscipline, deleteDiscipline, subscribeToDisciplines } from "./services/DisciplineService";
 import { useToast } from "@/hooks/use-toast";
-import { AuthProvider, useAuth } from "./hooks/useAuth";
-import { Navigate } from "react-router-dom";
 
 const queryClient = new QueryClient();
 
 function AppContent() {
-  const { user, loading } = useAuth();
   const [disciplines, setDisciplines] = useState<string[]>([]);
   const { toast } = useToast();
+  const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
 
-  // Load disciplines when user is authenticated
+  // Load disciplines
   useEffect(() => {
-    if (!user) return;
-
     const loadDisciplines = async () => {
       try {
-        const data = await getDisciplines(user.id);
+        const data = await getDisciplines(DEFAULT_USER_ID);
         setDisciplines(data);
       } catch (error) {
         console.error('Error loading disciplines:', error);
@@ -48,12 +43,11 @@ function AppContent() {
     });
 
     return unsubscribe;
-  }, [user, toast]);
+  }, [toast]);
 
   const handleAddDiscipline = async (name: string) => {
-    if (!user) return;
     try {
-      await addDiscipline(name, user.id);
+      await addDiscipline(name, DEFAULT_USER_ID);
       toast({
         title: "Disciplina adicionada",
         description: `${name} foi adicionada com sucesso`,
@@ -105,60 +99,39 @@ function AppContent() {
     }
   };
 
-  if (loading) {
-    return <div className="min-h-screen flex items-center justify-center">Carregando...</div>;
-  }
-
   return (
     <Routes>
-      <Route path="/auth" element={<Auth />} />
       <Route path="/" element={
-        user ? (
-          <Index 
-            disciplines={disciplines} 
-            onAddDiscipline={handleAddDiscipline} 
-            onEditDiscipline={handleEditDiscipline} 
-            onDeleteDiscipline={handleDeleteDiscipline} 
-          />
-        ) : (
-          <Navigate to="/auth" replace />
-        )
+        <Index 
+          disciplines={disciplines} 
+          onAddDiscipline={handleAddDiscipline} 
+          onEditDiscipline={handleEditDiscipline} 
+          onDeleteDiscipline={handleDeleteDiscipline} 
+        />
       } />
       <Route path="/calendar" element={
-        user ? (
-          <Calendar 
-            disciplines={disciplines}
-            onAddDiscipline={handleAddDiscipline}
-            onEditDiscipline={handleEditDiscipline}
-            onDeleteDiscipline={handleDeleteDiscipline}
-          />
-        ) : (
-          <Navigate to="/auth" replace />
-        )
+        <Calendar 
+          disciplines={disciplines}
+          onAddDiscipline={handleAddDiscipline}
+          onEditDiscipline={handleEditDiscipline}
+          onDeleteDiscipline={handleDeleteDiscipline}
+        />
       } />
       <Route path="/files" element={
-        user ? (
-          <Files 
-            disciplines={disciplines}
-            onAddDiscipline={handleAddDiscipline}
-            onEditDiscipline={handleEditDiscipline}
-            onDeleteDiscipline={handleDeleteDiscipline}
-          />
-        ) : (
-          <Navigate to="/auth" replace />
-        )
+        <Files 
+          disciplines={disciplines}
+          onAddDiscipline={handleAddDiscipline}
+          onEditDiscipline={handleEditDiscipline}
+          onDeleteDiscipline={handleDeleteDiscipline}
+        />
       } />
       <Route path="/analytics" element={
-        user ? (
-          <Analytics 
-            disciplines={disciplines}
-            onAddDiscipline={handleAddDiscipline}
-            onEditDiscipline={handleEditDiscipline}
-            onDeleteDiscipline={handleDeleteDiscipline}
-          />
-        ) : (
-          <Navigate to="/auth" replace />
-        )
+        <Analytics 
+          disciplines={disciplines}
+          onAddDiscipline={handleAddDiscipline}
+          onEditDiscipline={handleEditDiscipline}
+          onDeleteDiscipline={handleDeleteDiscipline}
+        />
       } />
       <Route path="*" element={<NotFound />} />
     </Routes>
@@ -168,15 +141,13 @@ function AppContent() {
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <BrowserRouter>
-            <Toaster />
-            <Sonner />
-            <AppContent />
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
+      <TooltipProvider>
+        <BrowserRouter>
+          <Toaster />
+          <Sonner />
+          <AppContent />
+        </BrowserRouter>
+      </TooltipProvider>
     </QueryClientProvider>
   );
 }

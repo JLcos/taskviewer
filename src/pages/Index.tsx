@@ -12,7 +12,6 @@ import { Button } from "@/components/ui/button";
 import { Link } from "react-router-dom";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { getTasks, addTask, updateTask, deleteTask, changeTaskStatus, subscribeToTasks } from "@/services/TaskService";
-import { supabase } from "@/integrations/supabase/client";
 interface IndexProps {
   disciplines: string[];
   onAddDiscipline: (name: string) => void;
@@ -34,12 +33,10 @@ const Index = ({
   // Load tasks on component mount
   useEffect(() => {
     const loadTasks = async () => {
-      // Get current user
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
+      const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
+      
       try {
-        const data = await getTasks(user.id);
+        const data = await getTasks(DEFAULT_USER_ID);
         setTasks(data);
         setIsLoading(false);
       } catch (error) {
@@ -82,12 +79,10 @@ const Index = ({
 
   // Handle task creation
   const handleCreateTask = async (newTask: Omit<Task, 'id' | 'status'>) => {
-    // Get current user
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    const DEFAULT_USER_ID = "00000000-0000-0000-0000-000000000000";
 
     try {
-      await addTask(newTask, user.id);
+      await addTask(newTask, DEFAULT_USER_ID);
       toast({
         title: "Tarefa criada",
         description: "Sua tarefa foi criada com sucesso",
