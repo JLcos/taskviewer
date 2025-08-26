@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { validateDisciplineName, checkRateLimit } from "@/lib/validation";
 
 export interface Discipline {
   id: string;
@@ -29,9 +30,20 @@ export const getDisciplines = async (userId: string): Promise<string[]> => {
 // Add a new discipline
 export const addDiscipline = async (name: string, userId: string) => {
   try {
+    // Rate limiting check
+    if (!checkRateLimit(`addDiscipline_${userId}`, 10, 60000)) {
+      throw new Error('Muitas tentativas. Tente novamente em alguns minutos.');
+    }
+
+    // Validate and sanitize input
+    const validation = validateDisciplineName(name);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
     const { error } = await supabase
       .from('disciplines')
-      .insert([{ name, user_id: userId }]);
+      .insert([{ name: validation.sanitized, user_id: userId }]);
 
     if (error) {
       console.error('Error adding discipline:', error);
@@ -46,10 +58,16 @@ export const addDiscipline = async (name: string, userId: string) => {
 // Update a discipline
 export const updateDiscipline = async (oldName: string, newName: string) => {
   try {
+    // Validate and sanitize input
+    const validation = validateDisciplineName(newName);
+    if (!validation.valid) {
+      throw new Error(validation.error);
+    }
+
     // Start a transaction to update both disciplines and tasks
     const { error: disciplineError } = await supabase
       .from('disciplines')
-      .update({ name: newName })
+      .update({ name: validation.sanitized })
       .eq('name', oldName);
 
     if (disciplineError) {
@@ -60,7 +78,7 @@ export const updateDiscipline = async (oldName: string, newName: string) => {
     // Update all tasks with the old discipline name
     const { error: tasksError } = await supabase
       .from('tasks')
-      .update({ discipline: newName })
+      .update({ discipline: validation.sanitized })
       .eq('discipline', oldName);
 
     if (tasksError) {

@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Task, TaskStatus } from "@/types/TaskTypes";
+import { validateTaskTitle, validateTaskDescription, validateDate, checkRateLimit } from "@/lib/validation";
 
 // Helpers: date and status mapping between DB and UI
 const monthNames = [
@@ -76,11 +77,37 @@ export const getTasks = async (userId: string): Promise<Task[]> => {
 // Add a new task
 export const addTask = async (newTask: Omit<Task, 'id' | 'status'>, userId: string) => {
   try {
+    // Rate limiting check
+    if (!checkRateLimit(`addTask_${userId}`, 20, 60000)) {
+      throw new Error('Muitas tentativas. Tente novamente em alguns minutos.');
+    }
+
+    // Validate and sanitize inputs
+    const titleValidation = validateTaskTitle(newTask.title);
+    if (!titleValidation.valid) {
+      throw new Error(titleValidation.error);
+    }
+
+    const descriptionValidation = validateTaskDescription(newTask.description || '');
+    if (!descriptionValidation.valid) {
+      throw new Error(descriptionValidation.error);
+    }
+
+    if (newTask.dueDate) {
+      const isoDate = toISODate(newTask.dueDate);
+      if (isoDate) {
+        const dateValidation = validateDate(isoDate);
+        if (!dateValidation.valid) {
+          throw new Error(dateValidation.error);
+        }
+      }
+    }
+
     const { data, error } = await supabase
       .from('tasks')
       .insert([{
-        title: newTask.title,
-        description: newTask.description,
+        title: titleValidation.sanitized,
+        description: descriptionValidation.sanitized,
         discipline: newTask.discipline,
         status: 'pendente',
         due_date: toISODate(newTask.dueDate),
@@ -113,11 +140,36 @@ export const updateTask = async (id: string, updatedTask: Partial<Task>) => {
   try {
     const updateData: any = {};
     
-    if (updatedTask.title !== undefined) updateData.title = updatedTask.title;
-    if (updatedTask.description !== undefined) updateData.description = updatedTask.description;
+    // Validate and sanitize inputs
+    if (updatedTask.title !== undefined) {
+      const titleValidation = validateTaskTitle(updatedTask.title);
+      if (!titleValidation.valid) {
+        throw new Error(titleValidation.error);
+      }
+      updateData.title = titleValidation.sanitized;
+    }
+    
+    if (updatedTask.description !== undefined) {
+      const descriptionValidation = validateTaskDescription(updatedTask.description);
+      if (!descriptionValidation.valid) {
+        throw new Error(descriptionValidation.error);
+      }
+      updateData.description = descriptionValidation.sanitized;
+    }
+    
     if (updatedTask.discipline !== undefined) updateData.discipline = updatedTask.discipline;
     if (updatedTask.status !== undefined) updateData.status = mapUiToDbStatus(updatedTask.status);
-    if (updatedTask.dueDate !== undefined) updateData.due_date = toISODate(updatedTask.dueDate);
+    
+    if (updatedTask.dueDate !== undefined) {
+      const isoDate = toISODate(updatedTask.dueDate);
+      if (isoDate) {
+        const dateValidation = validateDate(isoDate);
+        if (!dateValidation.valid) {
+          throw new Error(dateValidation.error);
+        }
+      }
+      updateData.due_date = isoDate;
+    }
 
     const { error } = await supabase
       .from('tasks')
